@@ -2,8 +2,6 @@ package game2048;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 /** Tests the tilt() method in the up (Side.NORTH) direction only.
  *
  * @author Omar Khan

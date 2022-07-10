@@ -3,7 +3,7 @@
 - [x] Lab 1: Setting Up Your Computer
 - [x] Lab 1: IntelliJ, Java, git
 - [ ] HW 0: A Java Crash Course
-- [ ] Project 0: 2048
+- [x] Project 0: 2048
 - [ ] Lab 2: JUnit Tests and Debugging
 - [ ] Lab 3: Timing Tests and Randomized Comparison Tests
 - [ ] Project 1: Data Structures
