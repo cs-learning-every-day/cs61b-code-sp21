@@ -4,7 +4,7 @@
 - [x] Lab 1: IntelliJ, Java, git
 - [ ] HW 0: A Java Crash Course
 - [x] Project 0: 2048
-- [ ] Lab 2: JUnit Tests and Debugging
+- [x] Lab 2: JUnit Tests and Debugging
 - [ ] Lab 3: Timing Tests and Randomized Comparison Tests
 - [ ] Project 1: Data Structures
 - [ ] Lab 4: Git and Debugging
