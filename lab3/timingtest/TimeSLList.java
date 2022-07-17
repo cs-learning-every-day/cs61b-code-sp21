@@ -30,13 +30,16 @@ public class TimeSLList {
         for (int i = 0; i < 8; i++) {
             Ns.addLast(N);
             int ops = 0;
-            Stopwatch sw = new Stopwatch();
             for (int j = 0; j < N; j++) {
-                lst.addLast(1);
+                lst.addFirst(j);
+            }
+            Stopwatch sw = new Stopwatch();
+            for (int j = 0; j < 10000; j++) {
+                lst.getLast();
                 ops++;
             }
-            opCounts.addLast(ops);
             times.addLast(sw.elapsedTime());
+            opCounts.addLast(ops);
             N += N;
         }
         printTimingTable(Ns, times, opCounts);

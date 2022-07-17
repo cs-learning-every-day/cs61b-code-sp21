@@ -31,23 +31,33 @@ public class TestBuggyAList {
 
     @Test
     public void randomizedTest() {
-        var L = new BuggyAList<>();
+        AListNoResizing<Integer> correct = new AListNoResizing<>();
+        BuggyAList<Integer> broken = new BuggyAList<>();
 
-        int N = 500;
+        int N = 5000;
         for (int i = 0; i < N; i += 1) {
-            int operationNumber = StdRandom.uniform(0, 3);
+            int operationNumber = StdRandom.uniform(0, 4);
             if (operationNumber == 0) {
                 // addLast
                 int randVal = StdRandom.uniform(0, 100);
-                L.addLast(randVal);
+                correct.addLast(randVal);
+                broken.addLast(randVal);
                 System.out.println("addLast(" + randVal + ")");
             } else if (operationNumber == 1) {
-                // size
-                int size = L.size();
-                System.out.println("size: " + size);
+                if (correct.size() > 0 && broken.size() > 0) {
+                    int v1 = correct.getLast();
+                    int v2 = broken.getLast();
+                    assertEquals(v1, v2);
+                    System.out.println("getLast(" + v1 + ")");
+                }
             } else if (operationNumber == 2) {
-                L.removeLast();
-                System.out.println("removeLast()");
+                if (correct.size() > 0 && broken.size() > 0) {
+                    int v1 = correct.removeLast();
+                    int v2 = broken.removeLast();
+                    assertEquals(v1, v2);
+                    assertEquals(correct.size(), broken.size());
+                    System.out.println("removeLast(" + v1 + ")");
+                }
             }
         }
     }
