@@ -5,7 +5,7 @@
 - [ ] HW 0: A Java Crash Course
 - [x] Project 0: 2048
 - [x] Lab 2: JUnit Tests and Debugging
-- [ ] Lab 3: Timing Tests and Randomized Comparison Tests
+- [x] Lab 3: Timing Tests and Randomized Comparison Tests
 - [ ] Project 1: Data Structures
 - [ ] Lab 4: Git and Debugging
 - [ ] Lab 5: Project 1 Peer Code Review
