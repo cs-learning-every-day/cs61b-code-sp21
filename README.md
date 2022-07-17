@@ -6,7 +6,7 @@
 - [x] Project 0: 2048
 - [x] Lab 2: JUnit Tests and Debugging
 - [x] Lab 3: Timing Tests and Randomized Comparison Tests
-- [ ] Project 1: Data Structures
+- [x] Project 1: Data Structures
 - [ ] Lab 4: Git and Debugging
 - [ ] Lab 5: Project 1 Peer Code Review
 - [ ] Project 2: Gitlet
