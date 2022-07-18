@@ -56,13 +56,13 @@ public class LinkedListDequeTest {
         assertEquals(l3, l1);
         assertEquals(l1, l3);
 
+        l3.addLast("def");
+        l1.addLast("def");
+        assertTrue(l1.equals(l3));
+        assertTrue(l3.equals(l1));
+
         assertFalse(l3.equals(null));
         assertFalse(l1.equals(null));
-
-        l3.removeFirst();
-        l2.removeFirst();
-        assertEquals(l2, l3);
-        assertEquals(l3, l2);
     }
 
     @Test
