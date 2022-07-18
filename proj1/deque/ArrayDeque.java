@@ -132,8 +132,8 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
         ArrayDeque<T> that = (ArrayDeque<T>) o;
 
-        if (size != that.size ||
-                that.items.length != this.items.length) {
+        if (size != that.size
+                || that.items.length != this.items.length) {
             return false;
         }
 
