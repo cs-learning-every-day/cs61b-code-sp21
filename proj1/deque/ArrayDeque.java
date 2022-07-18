@@ -114,6 +114,10 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
     @Override
     public boolean equals(Object o) {
+        if (o instanceof LinkedListDeque) {
+            return o.equals(this);
+        }
+
         if (this == o) {
             return true;
         }
@@ -122,21 +126,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
             return false;
         }
 
-        if (o instanceof LinkedListDeque) {
-            LinkedListDeque<T> that = (LinkedListDeque<T>) o;
-            if (that.size() != size) {
-                return false;
-            }
 
-            int idx = 0;
-            for (var ele : that) {
-                if (!get(idx).equals(ele)) {
-                    return false;
-                }
-                idx++;
-            }
-            return true;
-        }
 
         if (getClass() != o.getClass()) {
             return false;

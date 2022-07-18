@@ -151,6 +151,22 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
             return false;
         }
 
+        if (o instanceof ArrayDeque) {
+            ArrayDeque<T> that = (ArrayDeque<T>) o;
+            if (that.size() != size) {
+                return false;
+            }
+
+            Node<T> x = sentinel.next;
+            for (int i = 0; i < size; i++) {
+                if (!x.value.equals(that.get(i))) {
+                    return false;
+                }
+                x = x.next;
+            }
+            return true;
+        }
+
         if (getClass() == o.getClass()) {
             LinkedListDeque<T> that = (LinkedListDeque<T>) o;
             if (size != that.size) {
@@ -167,23 +183,10 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
                 y = y.next;
             }
             return true;
-        } else if (o instanceof ArrayDeque) {
-            ArrayDeque<T> that = (ArrayDeque<T>) o;
-            if (that.size() != size) {
-                return false;
-            }
-
-            Node<T> x = sentinel.next;
-            for (int i = 0; i < size; i++) {
-                if (!x.value.equals(that.get(i))) {
-                    return false;
-                }
-                x = x.next;
-            }
-            return true;
-        } else {
-            return false;
         }
+
+
+        return false;
     }
 
     @Override
