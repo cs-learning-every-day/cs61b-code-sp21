@@ -131,13 +131,19 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
             return false;
         }
 
-        int idx = 0;
-        for(var iter = that.iterator(); iter.hasNext();) {
-            Object ele = iter.next();
-            if (!get(idx).equals(ele)) {
+//        int idx = 0;
+//        for(var iter = that.iterator(); iter.hasNext();) {
+//            Object ele = iter.next();
+//            if (!get(idx).equals(ele)) {
+//                return false;
+//            }
+//            idx++;
+//        }
+
+        for (int i = 0; i < size; i++) {
+            if (!get(i).equals(that.get(i))) {
                 return false;
             }
-            idx++;
         }
         return true;
     }
