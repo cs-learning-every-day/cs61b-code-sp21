@@ -14,14 +14,9 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     private int nextLast;
 
     public ArrayDeque() {
-        this(DEFAULT_CAPACITY);
-    }
-
-    public ArrayDeque(int capacity) {
         size = 0;
-        capacity = Math.max(capacity, DEFAULT_CAPACITY);
-        items = (T[]) new Object[capacity];
-        nextFirst = capacity / 2;
+        items = (T[]) new Object[DEFAULT_CAPACITY];
+        nextFirst = DEFAULT_CAPACITY / 2;
         nextLast = nextFirst + 1;
     }
 
@@ -115,6 +110,39 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
             System.out.print(ele + " ");
         }
         System.out.println();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null) {
+            return false;
+        }
+
+        if (o instanceof LinkedListDeque<?>) {
+            return o.equals(this);
+        }
+
+        if (getClass() != o.getClass()) {
+            return false;
+        }
+
+        ArrayDeque<T> that = (ArrayDeque<T>) o;
+
+        if (size != that.size || that.items.length != this.items.length) {
+            return false;
+        }
+
+        for (int i = 0; i < size; i++) {
+            if (!that.items[i].equals(this.items[i])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
 

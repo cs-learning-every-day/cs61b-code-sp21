@@ -9,16 +9,16 @@ import java.util.Iterator;
  */
 public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     private static class Node<T> {
-        public T value;
-        public Node<T> next;
-        public Node<T> prev;
+        private T value;
+        private Node<T> next;
+        private Node<T> prev;
 
-        public Node() {
+        private Node() {
             next = this;
             prev = this;
         }
 
-        public Node(T value, Node<T> prev, Node<T> next) {
+        private Node(T value, Node<T> prev, Node<T> next) {
             this.value = value;
             this.next = next;
             this.prev = prev;
@@ -40,7 +40,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(value);
+            return Objects.hashCode(value, next, prev);
         }
     }
 
@@ -146,29 +146,46 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        LinkedListDeque<T> that = (LinkedListDeque<T>) o;
-        if (size != that.size) {
+
+        if (o == null) {
             return false;
         }
 
-        Node<T> x = this.sentinel.next;
-        Node<T> y = that.sentinel.next;
-        for (int i = 0; i < size; i++) {
-            if (!x.equals(y)) {
+        if (getClass() == o.getClass()) {
+            LinkedListDeque<T> that = (LinkedListDeque<T>) o;
+            if (size != that.size) {
                 return false;
             }
-            x = x.next;
-            y = y.next;
-        }
-        return true;
-    }
 
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(size, sentinel);
+            Node<T> x = this.sentinel.next;
+            Node<T> y = that.sentinel.next;
+            for (int i = 0; i < size; i++) {
+                if (!x.equals(y)) {
+                    return false;
+                }
+                x = x.next;
+                y = y.next;
+            }
+            return true;
+        } else if (o instanceof ArrayDeque) {
+            ArrayDeque<T> that = (ArrayDeque<T>) o;
+            if (that.size() != size) {
+                return false;
+            }
+
+            Node<T> x = sentinel.next;
+            int y = 0;
+            for (int i = 0; i < size; i++) {
+                if (!x.value.equals(that.get(y))) {
+                    return false;
+                }
+                x = x.next;
+                y = y + 1;
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

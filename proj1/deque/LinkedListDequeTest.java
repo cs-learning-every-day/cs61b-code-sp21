@@ -41,6 +41,14 @@ public class LinkedListDequeTest {
 
         l2.addLast("abc");
         assertEquals(l1, l2);
+
+        var l3 = new ArrayDeque<String>();
+        assertFalse(l1.equals(l3));
+        assertFalse(l3.equals(l1));
+
+        l3.addLast("abc");
+        assertEquals(l3, l1);
+        assertEquals(l1, l3);
     }
 
     @Test
