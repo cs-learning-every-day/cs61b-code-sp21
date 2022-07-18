@@ -122,7 +122,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
             return false;
         }
 
-        if (o instanceof LinkedListDeque<?>) {
+        if (o instanceof LinkedListDeque) {
             return o.equals(this);
         }
 
@@ -132,16 +132,16 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
         ArrayDeque<T> that = (ArrayDeque<T>) o;
 
-        if (size != that.size || that.items.length != this.items.length) {
+        if (size != that.size ||
+                that.items.length != this.items.length) {
             return false;
         }
 
         for (int i = 0; i < size; i++) {
-            if (!that.items[i].equals(this.items[i])) {
+            if (!this.items[i].equals(that.items[i])) {
                 return false;
             }
         }
-
         return true;
     }
 

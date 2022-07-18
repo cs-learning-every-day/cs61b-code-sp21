@@ -182,6 +182,8 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
                 x = x.next;
                 y = y + 1;
             }
+
+
             return true;
         } else {
             return false;

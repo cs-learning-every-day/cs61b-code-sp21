@@ -6,14 +6,14 @@ import java.util.Comparator;
  * @author huayang (sunhuayangak47@gmail.com)
  */
 public class MaxArrayDeque<T> extends ArrayDeque<T> {
-    private Comparator<T> c;
+    private Comparator<T> comparator;
 
     public MaxArrayDeque(Comparator<T> c) {
-        this.c = c;
+        this.comparator = c;
     }
 
     public T max() {
-        return max(this.c);
+        return max(this.comparator);
     }
 
     public T max(Comparator<T> c) {
@@ -26,7 +26,6 @@ public class MaxArrayDeque<T> extends ArrayDeque<T> {
                 res = ele;
             }
         }
-        this.c = c;
         return res;
     }
 

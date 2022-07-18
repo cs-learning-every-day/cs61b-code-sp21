@@ -33,7 +33,13 @@ public class LinkedListDequeTest {
     public void testEquals() {
         var l1 = new LinkedListDeque<String>();
         var l2 = new LinkedListDeque<String>();
+        var l3 = new ArrayDeque<String>();
+        var l4 = new ArrayDeque<String>();
 
+        assertEquals(l3, l4);
+
+        assertEquals(l2, l3);
+        assertEquals(l3, l2);
         assertEquals(l1, l2);
 
         l1.addFirst("abc");
@@ -42,13 +48,21 @@ public class LinkedListDequeTest {
         l2.addLast("abc");
         assertEquals(l1, l2);
 
-        var l3 = new ArrayDeque<String>();
+
         assertFalse(l1.equals(l3));
         assertFalse(l3.equals(l1));
 
         l3.addLast("abc");
         assertEquals(l3, l1);
         assertEquals(l1, l3);
+
+        assertFalse(l3.equals(null));
+        assertFalse(l1.equals(null));
+
+        l3.removeFirst();
+        l2.removeFirst();
+        assertEquals(l2, l3);
+        assertEquals(l3, l2);
     }
 
     @Test
