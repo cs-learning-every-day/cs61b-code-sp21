@@ -5,7 +5,7 @@ import java.util.Iterator;
 /**
  * @author huayang (sunhuayangak47@gmail.com)
  */
-public class ArrayDeque<T> implements Deque<T> {
+public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     private static final int DEFAULT_CAPACITY = 8;
 
     private int size;
@@ -64,17 +64,15 @@ public class ArrayDeque<T> implements Deque<T> {
     }
 
     @Override
-    public boolean isEmpty() {
-        return size == 0;
-    }
-
-    @Override
     public int size() {
         return size;
     }
 
     @Override
     public T removeFirst() {
+        if (isEmpty()) {
+            return null;
+        }
         if (size < items.length / 4 && size > 4) {
             resize(items.length / 4);
         }
@@ -88,6 +86,9 @@ public class ArrayDeque<T> implements Deque<T> {
 
     @Override
     public T removeLast() {
+        if (isEmpty()) {
+            return null;
+        }
         if (size < items.length / 4 && size > 4) {
             resize(items.length / 4);
         }
@@ -102,8 +103,18 @@ public class ArrayDeque<T> implements Deque<T> {
 
     @Override
     public T get(int index) {
-        if (index < 0 || index >= size) return null;
+        if (index < 0 || index >= size) {
+            return null;
+        }
         return items[convertIdx(nextFirst + 1 + index)];
+    }
+
+    @Override
+    public void printDeque() {
+        for (var ele : this) {
+            System.out.print(ele + " ");
+        }
+        System.out.println();
     }
 
 
