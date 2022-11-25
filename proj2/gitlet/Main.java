@@ -20,11 +20,11 @@ public class Main {
         switch (firstArg) {
             case "init":
                 checkValidOperands(args, 1);
-                Repository.makeInitRepository();
+                Repository.init();
                 break;
             case "add":
                 checkValidOperands(args, 2);
-                Repository.addFile(args[1]);
+                Repository.add(args[1]);
                 break;
             default:
                 System.err.println("No command with that name exists.");

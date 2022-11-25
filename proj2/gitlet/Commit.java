@@ -2,12 +2,12 @@ package gitlet;
 
 // TODO: any imports you need here
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import java.util.*;
+
+import static gitlet.Repository.OBJECT_COMMIT_DIR;
 
 /**
  * Represents a gitlet commit object.
@@ -22,14 +22,13 @@ public class Commit implements Serializable {
     private String message;
     private String timestamp;
     private String id;
-    private Commit parent;
+    private List<Commit> parents = new ArrayList<>();
+    private Map<String, String> filepathIdMap = new HashMap<>();
 
-    public static final File OBJECT_COMMIT_DIR = Utils.join(Repository.GITLET_DIR, "objects/commits");
 
-    public Commit(String msg, Date date, Commit parent) {
+    public Commit(String msg, Date date) {
         this.message = msg;
         this.timestamp = dateConvert2Timestamp(date);
-        this.parent = parent;
         this.id = generateID();
     }
 
@@ -46,7 +45,7 @@ public class Commit implements Serializable {
     }
 
     private String generateID() {
-        return Utils.sha1(message, timestamp);
+        return Utils.sha1(message, timestamp, parents.toString(), filepathIdMap.toString());
     }
 
     /**
@@ -71,9 +70,13 @@ public class Commit implements Serializable {
         }
     }
 
-    public static Commit fromFile(String id) {
+    public static Commit readCommit(String id) {
         return Utils.readObject(
                 Utils.join(OBJECT_COMMIT_DIR, id.substring(0, 2), id.substring(2)),
                 Commit.class);
+    }
+
+    public boolean containsBlob(Blob blob) {
+       return filepathIdMap.containsKey(blob.filepath());
     }
 }

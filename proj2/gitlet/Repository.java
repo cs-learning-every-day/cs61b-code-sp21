@@ -26,14 +26,29 @@ public class Repository {
      * The .gitlet directory.
      */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
+    public static final File INDEX_FILE = join(GITLET_DIR, "index");
+    public static final File REF_HEADS_DIR = join(GITLET_DIR, "refs/heads");
+    public static final File OBJECT_BLOB_DIR = join(GITLET_DIR, "objects/blobs");
+    public static final File OBJECT_COMMIT_DIR = join(GITLET_DIR, "objects/commits");
+    public static final File HEAD = join(GITLET_DIR, "HEAD");
+
+    public static Stage stage = new Stage();
+    public static Commit currCommit;
 
     private Repository() {
+    }
+
+    private static void checkRepositoryExist() {
+        if (!GITLET_DIR.exists()) {
+            System.err.println("fatal: not a git repository: .gitlet.");
+            System.exit(0);
+        }
     }
 
     /**
      * 设置默认分支为master, 提交个init commit
      */
-    public static void makeInitRepository() {
+    public static void init() {
         if (GITLET_DIR.exists()) {
             System.err.println("A Gitlet version-control system already exists in the current directory.");
             System.exit(0);
@@ -43,28 +58,49 @@ public class Repository {
         join(GITLET_DIR, "refs", "heads").mkdirs();
 
         var master = join(GITLET_DIR, "refs", "heads", DEFAULT_BRANCH_NAME);
-        var HEAD = join(GITLET_DIR, "HEAD");
         try {
             master.createNewFile();
             HEAD.createNewFile();
             Utils.writeContents(HEAD, DEFAULT_BRANCH_NAME);
+            INDEX_FILE.createNewFile();
+            stage.save();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-        var firstCommit = new Commit(DEFAULT_INIT_MSG, new Date(0), null);
+        var firstCommit = new Commit(DEFAULT_INIT_MSG, new Date(0));
         firstCommit.save();
         Utils.writeContents(master, firstCommit.id());
     }
 
-    private static void writeHEAD(String name) {
+    public static void add(String filepath) {
+        checkRepositoryExist();
+        checkFileExist(filepath);
+        // create new blob object
+        var blob = new Blob(filepath);
 
+        readCurrCommit();
+        if (currCommit.containsBlob(blob)) {
+            return;
+        }
+        blob.save();
+        stage = Stage.readStage();
+
+        stage.addBlob(blob);
+        stage.save();
     }
 
-    private static void commitHEAD() {
+    private static void readCurrCommit() {
+        String currBranchName = Utils.readContentsAsString(HEAD);
+        String id = Utils.readContentsAsString(Utils.join(REF_HEADS_DIR, currBranchName));
+        currCommit = Commit.readCommit(id);
     }
 
-    public static void addFile(String filepath) {
+    protected static void checkFileExist(String filepath) {
+        if (!Utils.join(CWD, filepath).exists()) {
+            System.err.println("File does not exist.");
+            System.exit(0);
+        }
     }
 }

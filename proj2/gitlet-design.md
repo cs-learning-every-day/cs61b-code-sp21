@@ -6,12 +6,14 @@
 - [CS61B学习笔记——proj2 gitlet的实现](https://blog.csdn.net/weixin_43405649/article/details/124270510)
 - [Gitlet](https://yukang-lian.github.io/2022/06/25/Gitlet/)
 - [Gitlet js](http://gitlet.maryrosecook.com/docs/gitlet.html)
+- [Understanding Git — Index](https://konrad126.medium.com/understanding-git-index-4821a0765cf)
+- [Make your monorepo feel small with Git’s sparse index](https://github.blog/2021-11-10-make-your-monorepo-feel-small-with-gits-sparse-index/#:~:text=The%20Git%20index%20is%20a,to%20be%20%E2%80%9Cstaged%20changes%E2%80%9D.)
 
 ## 存储布局 
 .getlet
     / objects  -- 将文件sha-1 id 取前两位当文件夹, 后38位当文件名
         / commits -- 提交记录
-        / blobs -- 文件
+        / blobs -- 文件快照
             / 01
                 / 00addc5befcfd6ae8cc18473297a5336242d92
     / refs
@@ -19,10 +21,14 @@
             / master  存放当前commit id
         / remotes
         / tags
-    / add-staged -- staged for addition
-    / removal-staged -- staged for removal
+    / index -- staged
     / HEAD -- current branch name
 
+## 指令实现
+#### init
+创建默认master分支, HEAD内容为master, master内容为最后一次提交，这就是默认提交一次init commit, 写入空的index区
+#### add
+为文件创建blob, 添加到index区中,
 
 ## 调试指南
 先编译javac *.java

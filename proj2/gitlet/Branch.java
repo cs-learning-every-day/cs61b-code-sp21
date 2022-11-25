@@ -11,8 +11,8 @@ public class Branch extends Commit {
      */
     private String name;
 
-    public Branch(String name, String msg, Date date, Commit parent) {
-        super(msg, date, parent);
+    public Branch(String name, String msg, Date date) {
+        super(msg, date);
         this.name = name;
     }
 }
