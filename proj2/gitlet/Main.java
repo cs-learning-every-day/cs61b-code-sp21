@@ -1,24 +1,41 @@
 package gitlet;
 
-/** Driver class for Gitlet, a subset of the Git version-control system.
- *  @author TODO
+/**
+ * Driver class for Gitlet, a subset of the Git version-control system.
+ *
+ * @author ChillyForest
  */
 public class Main {
 
-    /** Usage: java gitlet.Main ARGS, where ARGS contains
-     *  <COMMAND> <OPERAND1> <OPERAND2> ... 
+    /**
+     * Usage: java gitlet.Main ARGS, where ARGS contains
+     * <COMMAND> <OPERAND1> <OPERAND2> ...
      */
     public static void main(String[] args) {
-        // TODO: what if args is empty?
+        if (args.length == 0) {
+            System.err.println("Please enter a command.");
+            System.exit(0);
+        }
         String firstArg = args[0];
-        switch(firstArg) {
+        switch (firstArg) {
             case "init":
-                // TODO: handle the `init` command
+                checkValidOperands(args, 1);
+                Repository.makeInitRepository();
                 break;
             case "add":
-                // TODO: handle the `add [filename]` command
+                checkValidOperands(args, 2);
+                Repository.addFile(args[1]);
                 break;
-            // TODO: FILL THE REST IN
+            default:
+                System.err.println("No command with that name exists.");
+                break;
+        }
+    }
+
+    private static void checkValidOperands(String[] args, int expectedCount) {
+        if (args.length != expectedCount) {
+            System.err.println("Incorrect operands.");
+            System.exit(0);
         }
     }
 }
