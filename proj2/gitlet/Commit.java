@@ -22,14 +22,19 @@ public class Commit implements Serializable {
     private String message;
     private String timestamp;
     private String id;
-    private List<Commit> parents = new ArrayList<>();
+    private Commit parent;
     private Map<String, String> filepathIdMap = new HashMap<>();
 
 
     public Commit(String msg, Date date) {
+        parent = this;
         this.message = msg;
         this.timestamp = dateConvert2Timestamp(date);
         this.id = generateID();
+    }
+
+    public void setParent(Commit blob) {
+        parent = blob;
     }
 
     public String id() {
@@ -45,7 +50,8 @@ public class Commit implements Serializable {
     }
 
     private String generateID() {
-        return Utils.sha1(message, timestamp, parents.toString(), filepathIdMap.toString());
+        assert parent != null;
+        return Utils.sha1(message, timestamp, parent.toString(), filepathIdMap.toString());
     }
 
     /**
@@ -76,7 +82,4 @@ public class Commit implements Serializable {
                 Commit.class);
     }
 
-    public boolean containsBlob(Blob blob) {
-       return filepathIdMap.containsKey(blob.filepath());
-    }
 }

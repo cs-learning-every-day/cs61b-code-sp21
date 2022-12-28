@@ -80,21 +80,54 @@ public class Repository {
         // create new blob object
         var blob = new Blob(filepath);
 
-        readCurrCommit();
-        if (currCommit.containsBlob(blob)) {
+        if (existBlobById(blob.id())) {
             return;
         }
         blob.save();
-        stage = Stage.readStage();
+        initialized();
 
         stage.addBlob(blob);
         stage.save();
     }
 
+    public static void commit(String msg) {
+        initialized();
+        if (stage.isEmpty()) {
+            System.err.println("No changes added to the commit.");
+            System.exit(0);
+        }
+
+        var newCommit = new Commit(msg, new Date());
+        newCommit.setParent(currCommit);
+        newCommit.save();
+
+        updateCurrentCommit(newCommit);
+
+        stage.clear();
+        stage.save();
+    }
+
+
+    private static void updateCurrentCommit(Commit commit) {
+        // update current branch
+        Utils.writeContents(Utils.join(REF_HEADS_DIR, getCurrBranchName()), commit.id());
+        currCommit = commit;
+    }
+
+    private static String getCurrBranchName() {
+        return Utils.readContentsAsString(HEAD);
+    }
+
+    private static String getCurrCommitId() {
+        return Utils.readContentsAsString(Utils.join(REF_HEADS_DIR, getCurrBranchName()));
+    }
+
     private static void readCurrCommit() {
-        String currBranchName = Utils.readContentsAsString(HEAD);
-        String id = Utils.readContentsAsString(Utils.join(REF_HEADS_DIR, currBranchName));
-        currCommit = Commit.readCommit(id);
+        currCommit = Commit.readCommit(getCurrCommitId());
+    }
+
+    private static void readStage() {
+        stage = Stage.readStage();
     }
 
     protected static void checkFileExist(String filepath) {
@@ -103,4 +136,18 @@ public class Repository {
             System.exit(0);
         }
     }
+
+    private static void initialized() {
+        readCurrCommit();
+        readStage();
+    }
+
+
+    private static boolean existBlobById(String id) {
+        return Utils.join(OBJECT_BLOB_DIR,
+                        id.substring(0, 2),
+                        id.substring(2))
+                .isFile();
+    }
+
 }

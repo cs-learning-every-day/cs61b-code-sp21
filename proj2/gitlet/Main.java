@@ -19,12 +19,22 @@ public class Main {
         String firstArg = args[0];
         switch (firstArg) {
             case "init":
-                checkValidOperands(args, 1);
                 Repository.init();
                 break;
             case "add":
-                checkValidOperands(args, 2);
+                if (args.length == 1) {
+                    return;
+                }
                 Repository.add(args[1]);
+                break;
+            case "commit":
+                if (args.length == 1 ||
+                        args[1].length() == 0 ||
+                        args[1].strip().length() == 0) {
+                    System.err.println("Please enter a commit message.");
+                    return;
+                }
+                Repository.commit(args[1]);
                 break;
             default:
                 System.err.println("No command with that name exists.");

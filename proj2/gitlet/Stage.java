@@ -34,4 +34,15 @@ public class Stage implements Serializable {
     public void save() {
         Utils.writeObject(INDEX_FILE, this);
     }
+
+    /**
+     * 清空 索引区
+     */
+    public void clear() {
+       pathIdMap.clear();
+    }
+
+    public boolean isEmpty() {
+        return pathIdMap.isEmpty();
+    }
 }
