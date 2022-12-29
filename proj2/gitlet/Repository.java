@@ -76,7 +76,10 @@ public class Repository {
 
     public static void add(String filepath) {
         checkRepositoryExist();
-        checkFileExist(filepath);
+        if (!fileExistWorkspace(filepath)) {
+            System.err.println("File does not exist.");
+            System.exit(0);
+        }
         // create new blob object
         var blob = new Blob(filepath);
 
@@ -99,6 +102,7 @@ public class Repository {
 
         var newCommit = new Commit(msg, new Date());
         newCommit.setParent(currCommit);
+        newCommit.putAllBlob(stage.addedCache);
         newCommit.save();
 
         updateCurrentCommit(newCommit);
@@ -107,6 +111,24 @@ public class Repository {
         stage.save();
     }
 
+    public static void rm(String filepath) {
+        initialized();
+        var blob = new Blob(filepath);
+
+        if (stage.containsAddedBlob(blob)) {
+            blob.remove();
+            stage.addedCache.remove(blob.filepath());
+            stage.save();
+        } else if (currCommit.containsBlob(blob)) {
+            workspaceFileDelete(filepath);
+            currCommit.removeBlob(blob);
+            updateCurrentCommit(currCommit);
+            stage.addRemovedBlob(blob);
+        } else {
+            System.err.println("No reason to remove the file.");
+            System.exit(0);
+        }
+    }
 
     private static void updateCurrentCommit(Commit commit) {
         // update current branch
@@ -130,11 +152,12 @@ public class Repository {
         stage = Stage.readStage();
     }
 
-    protected static void checkFileExist(String filepath) {
-        if (!Utils.join(CWD, filepath).exists()) {
-            System.err.println("File does not exist.");
-            System.exit(0);
-        }
+    private static boolean fileExistWorkspace(String filepath) {
+       return Utils.join(CWD, filepath).exists();
+    }
+
+    private static void workspaceFileDelete(String filepath) {
+        Utils.join(CWD, filepath).delete();
     }
 
     private static void initialized() {

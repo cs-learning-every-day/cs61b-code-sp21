@@ -36,6 +36,10 @@ public class Main {
                 }
                 Repository.commit(args[1]);
                 break;
+            case "rm":
+                checkValidOperands(args, 2);
+                Repository.rm(args[1]);
+                break;
             default:
                 System.err.println("No command with that name exists.");
                 break;

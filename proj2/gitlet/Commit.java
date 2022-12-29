@@ -41,6 +41,10 @@ public class Commit implements Serializable {
         return this.id;
     }
 
+    public boolean containsBlob(Blob blob) {
+        return filepathIdMap.containsKey(blob.filepath());
+    }
+
     @Override
     public String toString() {
         return "Commit{" +
@@ -82,4 +86,11 @@ public class Commit implements Serializable {
                 Commit.class);
     }
 
+    public void removeBlob(Blob blob) {
+        filepathIdMap.remove(blob.filepath());
+    }
+
+    public void putAllBlob(Map<String, String> addedCache) {
+        filepathIdMap.putAll(addedCache);
+    }
 }

@@ -50,4 +50,11 @@ public class Blob implements Serializable {
                 Utils.join(OBJECT_BLOB_DIR, id.substring(0, 2), id.substring(2)),
                 Blob.class);
     }
+
+    public void remove() {
+        Utils.join(OBJECT_BLOB_DIR,
+                        id.substring(0, 2),
+                        id.substring(2))
+                .delete();
+    }
 }

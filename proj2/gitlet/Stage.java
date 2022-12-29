@@ -13,7 +13,8 @@ public class Stage implements Serializable {
     /**
      * blob path - blob id
      */
-    protected Map<String, String> pathIdMap = new HashMap<>();
+    protected Map<String, String> addedCache = new HashMap<>();
+    protected Map<String, String> removedCache = new HashMap<>();
 
     public Stage() {
 
@@ -23,12 +24,12 @@ public class Stage implements Serializable {
         return Utils.readObject(Repository.INDEX_FILE, Stage.class);
     }
 
-    public boolean containsBlob(Blob blob) {
-        return pathIdMap.containsKey(blob.filepath());
+    public boolean containsAddedBlob(Blob blob) {
+        return addedCache.containsKey(blob.filepath());
     }
 
     public void addBlob(Blob blob) {
-        pathIdMap.put(blob.filepath(), blob.id());
+        addedCache.put(blob.filepath(), blob.id());
     }
 
     public void save() {
@@ -39,10 +40,14 @@ public class Stage implements Serializable {
      * 清空 索引区
      */
     public void clear() {
-       pathIdMap.clear();
+       addedCache.clear();
     }
 
     public boolean isEmpty() {
-        return pathIdMap.isEmpty();
+        return addedCache.isEmpty();
+    }
+
+    public void addRemovedBlob(Blob blob) {
+        removedCache.put(blob.filepath(), blob.id());
     }
 }
