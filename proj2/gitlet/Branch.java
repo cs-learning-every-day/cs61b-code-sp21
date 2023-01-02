@@ -6,6 +6,7 @@ import java.util.Date;
  * @author huayang (sunhuayangak47@gmail.com)
  */
 public class Branch extends Commit {
+    private static final long serialVersionUID = 42L;
     /**
      * branch name
      */

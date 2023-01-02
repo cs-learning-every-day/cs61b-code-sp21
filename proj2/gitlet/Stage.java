@@ -9,6 +9,8 @@ import java.util.Map;
  * @author huayang (sunhuayangak47@gmail.com)
  */
 public class Stage implements Serializable {
+    private static final long serialVersionUID = 42L;
+
     /**
      * Cache blob path - blob id
      */

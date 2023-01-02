@@ -3,6 +3,7 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 import static gitlet.Utils.join;
@@ -150,14 +151,42 @@ public class Repository {
         }
     }
 
-
-    // Helper Function =============================
     private static void logPrintCommit(Commit c, boolean hasManyParent) {
         System.out.println("===");
         System.out.println("commit " + c.getId());
         System.out.println("Date: " + c.getTimestamp());
         System.out.println(c.getMessage());
         System.out.println();
+    }
+
+    public static void globalLog() {
+        File[] files = OBJECT_COMMIT_DIR.listFiles();
+        if (files == null) return;
+        assert files.length > 0;
+
+        for (File dirFile : files) {
+            assert dirFile.isDirectory();
+
+            List<String> filenames = Utils.plainFilenamesIn(dirFile);
+            if (filenames == null) return;
+
+            for (String filename : filenames) {
+                Commit c = readCommit(join(dirFile, filename));
+                logPrintCommit(c, c.getParents().size() > 1);
+            }
+        }
+    }
+
+    // Helper Function =============================
+
+    public static Commit readCommit(String id) {
+        return Utils.readObject(
+                Utils.join(OBJECT_COMMIT_DIR, id.substring(0, 2), id.substring(2)),
+                Commit.class);
+    }
+
+    public static Commit readCommit(File f) {
+        return Utils.readObject(f, Commit.class);
     }
 
     private static void updateCurrentCommit(Commit commit) {
@@ -175,7 +204,7 @@ public class Repository {
     }
 
     private static void readCurrCommit() {
-        currCommit = Commit.readCommit(getCurrCommitId());
+        currCommit = readCommit(getCurrCommitId());
     }
 
     private static void readStage() {
@@ -218,6 +247,4 @@ public class Repository {
                         id.substring(2))
                 .isFile();
     }
-
-
 }

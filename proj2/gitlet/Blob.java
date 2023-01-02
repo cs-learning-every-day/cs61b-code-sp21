@@ -9,6 +9,7 @@ import static gitlet.Repository.OBJECT_BLOB_DIR;
  * @author huayang (sunhuayangak47@gmail.com)
  */
 public class Blob implements Serializable {
+    private static final long serialVersionUID = 42L;
     private byte[] content;
     private String filepath;
     private String id;

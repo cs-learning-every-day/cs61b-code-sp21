@@ -43,6 +43,9 @@ public class Main {
             case "log":
                 Repository.log();
                 break;
+            case "global-log":
+                Repository.globalLog();
+                break;
             default:
                 System.err.println("No command with that name exists.");
                 break;

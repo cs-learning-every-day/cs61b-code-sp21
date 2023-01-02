@@ -16,6 +16,7 @@ import static gitlet.Repository.OBJECT_COMMIT_DIR;
  */
 public class Commit implements Serializable {
 
+    private static final long serialVersionUID = 42L;
     /**
      * The message of this Commit.
      */
@@ -92,11 +93,6 @@ public class Commit implements Serializable {
         }
     }
 
-    public static Commit readCommit(String id) {
-        return Utils.readObject(
-                Utils.join(OBJECT_COMMIT_DIR, id.substring(0, 2), id.substring(2)),
-                Commit.class);
-    }
 
     public void removeBlob(Blob blob) {
         filepathIdMap.remove(blob.filepath());
