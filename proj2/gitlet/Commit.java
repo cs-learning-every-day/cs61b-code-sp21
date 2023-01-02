@@ -35,6 +35,7 @@ public class Commit implements Serializable {
 
     public void setParent(Commit blob) {
         parent = blob;
+        filepathIdMap.putAll(parent.filepathIdMap);
     }
 
     public String id() {
@@ -91,6 +92,7 @@ public class Commit implements Serializable {
     }
 
     public void putAllBlob(Map<String, String> addedCache) {
+        // also update current exist file id
         filepathIdMap.putAll(addedCache);
     }
 }

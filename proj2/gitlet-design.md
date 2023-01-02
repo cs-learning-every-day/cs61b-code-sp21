@@ -21,7 +21,8 @@
             / master  存放当前commit id
         / remotes
         / tags
-    / index -- staged
+    / stageAdded - staged for addition
+    / stageRemoval - staged for removal
     / HEAD -- current branch name
 
 

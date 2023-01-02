@@ -26,13 +26,16 @@ public class Repository {
      * The .gitlet directory.
      */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
-    public static final File INDEX_FILE = join(GITLET_DIR, "index");
+    public static final File STAGE_ADDITION_FILE = join(GITLET_DIR, "stageAdded");
+    public static final File STAGE_REMOVAL_FILE = join(GITLET_DIR, "stageRemoval");
     public static final File REF_HEADS_DIR = join(GITLET_DIR, "refs/heads");
     public static final File OBJECT_BLOB_DIR = join(GITLET_DIR, "objects/blobs");
     public static final File OBJECT_COMMIT_DIR = join(GITLET_DIR, "objects/commits");
     public static final File HEAD = join(GITLET_DIR, "HEAD");
 
-    public static Stage stage = new Stage();
+    public static Stage stageAdded = new Stage();
+    public static Stage stageRemoval = new Stage();
+
     public static Commit currCommit;
 
     private Repository() {
@@ -62,8 +65,10 @@ public class Repository {
             master.createNewFile();
             HEAD.createNewFile();
             Utils.writeContents(HEAD, DEFAULT_BRANCH_NAME);
-            INDEX_FILE.createNewFile();
-            stage.save();
+            STAGE_ADDITION_FILE.createNewFile();
+            STAGE_REMOVAL_FILE.createNewFile();
+            saveAddedStage();
+            saveRemovalStage();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -73,6 +78,7 @@ public class Repository {
         firstCommit.save();
         Utils.writeContents(master, firstCommit.id());
     }
+
 
     public static void add(String filepath) {
         checkRepositoryExist();
@@ -89,41 +95,41 @@ public class Repository {
         blob.save();
         initialized();
 
-        stage.addBlob(blob);
-        stage.save();
+        stageAdded.addBlob(blob);
+        saveAddedStage();
     }
 
     public static void commit(String msg) {
         initialized();
-        if (stage.isEmpty()) {
+        if (stageAdded.isEmpty()) {
             System.err.println("No changes added to the commit.");
             System.exit(0);
         }
 
         var newCommit = new Commit(msg, new Date());
         newCommit.setParent(currCommit);
-        newCommit.putAllBlob(stage.addedCache);
+        newCommit.putAllBlob(stageAdded.getCache());
         newCommit.save();
 
         updateCurrentCommit(newCommit);
 
-        stage.clear();
-        stage.save();
+        stageAdded.clear();
+        saveAddedStage();
     }
 
     public static void rm(String filepath) {
         initialized();
         var blob = new Blob(filepath);
 
-        if (stage.containsAddedBlob(blob)) {
+        if (stageAdded.containsBlob(blob)) {
             blob.remove();
-            stage.addedCache.remove(blob.filepath());
-            stage.save();
+            stageAdded.removeBlob(blob);
+            saveAddedStage();
         } else if (currCommit.containsBlob(blob)) {
             workspaceFileDelete(filepath);
             currCommit.removeBlob(blob);
             updateCurrentCommit(currCommit);
-            stage.addRemovedBlob(blob);
+            stageRemoval.addBlob(blob);
         } else {
             System.err.println("No reason to remove the file.");
             System.exit(0);
@@ -149,11 +155,20 @@ public class Repository {
     }
 
     private static void readStage() {
-        stage = Stage.readStage();
+        stageRemoval = Stage.readStage(STAGE_REMOVAL_FILE);
+        stageAdded = Stage.readStage(STAGE_ADDITION_FILE);
+    }
+
+    public static void saveAddedStage() {
+        Utils.writeObject(STAGE_ADDITION_FILE, stageAdded);
+    }
+
+    public static void saveRemovalStage() {
+        Utils.writeObject(STAGE_REMOVAL_FILE, stageRemoval);
     }
 
     private static boolean fileExistWorkspace(String filepath) {
-       return Utils.join(CWD, filepath).exists();
+        return Utils.join(CWD, filepath).exists();
     }
 
     private static void workspaceFileDelete(String filepath) {

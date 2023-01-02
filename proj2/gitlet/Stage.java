@@ -1,53 +1,51 @@
 package gitlet;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-
-import static gitlet.Repository.INDEX_FILE;
 
 /**
  * @author huayang (sunhuayangak47@gmail.com)
  */
 public class Stage implements Serializable {
     /**
-     * blob path - blob id
+     * Cache blob path - blob id
      */
-    protected Map<String, String> addedCache = new HashMap<>();
-    protected Map<String, String> removedCache = new HashMap<>();
+    private Map<String, String> cache = new HashMap<>();
 
     public Stage() {
 
     }
 
-    public static Stage readStage() {
-        return Utils.readObject(Repository.INDEX_FILE, Stage.class);
+    public static Stage readStage(File file) {
+        return Utils.readObject(file, Stage.class);
     }
 
-    public boolean containsAddedBlob(Blob blob) {
-        return addedCache.containsKey(blob.filepath());
+    public boolean containsBlob(Blob blob) {
+        return cache.containsKey(blob.filepath());
     }
 
     public void addBlob(Blob blob) {
-        addedCache.put(blob.filepath(), blob.id());
-    }
-
-    public void save() {
-        Utils.writeObject(INDEX_FILE, this);
+        cache.put(blob.filepath(), blob.id());
     }
 
     /**
      * 清空 索引区
      */
     public void clear() {
-       addedCache.clear();
+        cache.clear();
     }
 
     public boolean isEmpty() {
-        return addedCache.isEmpty();
+        return cache.isEmpty();
     }
 
-    public void addRemovedBlob(Blob blob) {
-        removedCache.put(blob.filepath(), blob.id());
+    public Map<String, String> getCache() {
+        return cache;
+    }
+
+    public void removeBlob(Blob b) {
+        cache.remove(b.filepath());
     }
 }
