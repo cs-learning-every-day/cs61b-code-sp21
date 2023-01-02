@@ -22,24 +22,36 @@ public class Commit implements Serializable {
     private String message;
     private String timestamp;
     private String id;
-    private Commit parent;
+    private List<Commit> parents = new ArrayList<>();
     private Map<String, String> filepathIdMap = new HashMap<>();
 
 
     public Commit(String msg, Date date) {
-        parent = this;
         this.message = msg;
         this.timestamp = dateConvert2Timestamp(date);
         this.id = generateID();
     }
 
-    public void setParent(Commit blob) {
-        parent = blob;
-        filepathIdMap.putAll(parent.filepathIdMap);
+    public void addParent(Commit blob) {
+        parents.add(blob);
+        filepathIdMap.putAll(blob.filepathIdMap);
     }
 
-    public String id() {
+    public String getId() {
         return this.id;
+    }
+
+    public String getTimestamp() {
+        return this.timestamp;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+
+    public List<Commit> getParents() {
+        return parents;
     }
 
     public boolean containsBlob(Blob blob) {
@@ -55,16 +67,15 @@ public class Commit implements Serializable {
     }
 
     private String generateID() {
-        assert parent != null;
-        return Utils.sha1(message, timestamp, parent.toString(), filepathIdMap.toString());
+        return Utils.sha1(message, timestamp, parents.toString(), filepathIdMap.toString());
     }
 
     /**
      * https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/text/SimpleDateFormat.html#
-     * return 00:00:00 UTC, Thursday, 1 January 1970
+     * return Thu Nov 9 17:01:33 2017 -0800
      */
     private String dateConvert2Timestamp(Date date) {
-        var dateFormat = new SimpleDateFormat("HH:mm:ss z, EEE, d MMM yyyy", Locale.US);
+        var dateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.US);
 //        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         return dateFormat.format(date);
     }

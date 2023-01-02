@@ -41,12 +41,7 @@ public class Repository {
     private Repository() {
     }
 
-    private static void checkRepositoryExist() {
-        if (!GITLET_DIR.exists()) {
-            System.err.println("fatal: not a git repository: .gitlet.");
-            System.exit(0);
-        }
-    }
+    // Command Function =============================
 
     /**
      * 设置默认分支为master, 提交个init commit
@@ -76,9 +71,8 @@ public class Repository {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         var firstCommit = new Commit(DEFAULT_INIT_MSG, new Date(0));
         firstCommit.save();
-        Utils.writeContents(master, firstCommit.id());
+        Utils.writeContents(master, firstCommit.getId());
     }
-
 
     public static void add(String filepath) {
         checkRepositoryExist();
@@ -107,7 +101,7 @@ public class Repository {
         }
 
         var newCommit = new Commit(msg, new Date());
-        newCommit.setParent(currCommit);
+        newCommit.addParent(currCommit);
         newCommit.putAllBlob(stageAdded.getCache());
         newCommit.save();
 
@@ -136,9 +130,39 @@ public class Repository {
         }
     }
 
+    public static void log() {
+        initialized();
+        var p = currCommit;
+        boolean hasManyParent;
+        int size;
+        while (true) {
+            size = p.getParents().size();
+            hasManyParent = size > 1;
+            logPrintCommit(p, hasManyParent);
+
+            if (size == 0) {
+                break;
+            } else {
+                // TODO: test merge case
+                // merge case : print first parent  commit ignore another
+                p = p.getParents().get(0);
+            }
+        }
+    }
+
+
+    // Helper Function =============================
+    private static void logPrintCommit(Commit c, boolean hasManyParent) {
+        System.out.println("===");
+        System.out.println("commit " + c.getId());
+        System.out.println("Date: " + c.getTimestamp());
+        System.out.println(c.getMessage());
+        System.out.println();
+    }
+
     private static void updateCurrentCommit(Commit commit) {
         // update current branch
-        Utils.writeContents(Utils.join(REF_HEADS_DIR, getCurrBranchName()), commit.id());
+        Utils.writeContents(Utils.join(REF_HEADS_DIR, getCurrBranchName()), commit.getId());
         currCommit = commit;
     }
 
@@ -171,6 +195,13 @@ public class Repository {
         return Utils.join(CWD, filepath).exists();
     }
 
+    private static void checkRepositoryExist() {
+        if (!GITLET_DIR.exists()) {
+            System.err.println("fatal: not a git repository: .gitlet.");
+            System.exit(0);
+        }
+    }
+
     private static void workspaceFileDelete(String filepath) {
         Utils.join(CWD, filepath).delete();
     }
@@ -187,5 +218,6 @@ public class Repository {
                         id.substring(2))
                 .isFile();
     }
+
 
 }

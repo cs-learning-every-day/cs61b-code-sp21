@@ -40,6 +40,9 @@ public class Main {
                 checkValidOperands(args, 2);
                 Repository.rm(args[1]);
                 break;
+            case "log":
+                Repository.log();
+                break;
             default:
                 System.err.println("No command with that name exists.");
                 break;
