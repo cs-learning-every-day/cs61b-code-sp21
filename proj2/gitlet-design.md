@@ -35,6 +35,13 @@ java gitlet.Main add file
 ...
 ```
 
+## 代码测试
+运行前一定要先在gitlet源文件目录下运行javac *.java编译文件才可以。
+```
+python tester.py samples/test01-init.in
+输出结果
+python tester.py --verbose samples/test01-init.in
+```
 
 ## 指令实现
 

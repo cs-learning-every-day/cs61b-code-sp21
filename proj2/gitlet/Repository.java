@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -134,12 +135,10 @@ public class Repository {
     public static void log() {
         initialized();
         var p = currCommit;
-        boolean hasManyParent;
         int size;
         while (true) {
             size = p.getParents().size();
-            hasManyParent = size > 1;
-            logPrintCommit(p, hasManyParent);
+            logPrintCommit(p);
 
             if (size == 0) {
                 break;
@@ -151,33 +150,61 @@ public class Repository {
         }
     }
 
-    private static void logPrintCommit(Commit c, boolean hasManyParent) {
+    private static void logPrintCommit(Commit c) {
         System.out.println("===");
         System.out.println("commit " + c.getId());
+        if (c.getParents().size() > 1) {
+            String id1 = c.getParents().get(0).getId();
+            String id2 = c.getParents().get(1).getId();
+            System.out.printf("Merge: %s %s", id1, id2);
+        }
         System.out.println("Date: " + c.getTimestamp());
         System.out.println(c.getMessage());
         System.out.println();
     }
 
     public static void globalLog() {
-        File[] files = OBJECT_COMMIT_DIR.listFiles();
-        if (files == null) return;
-        assert files.length > 0;
+        List<Commit> allCommit = getAllCommit();
+        for (Commit c : allCommit) {
+            logPrintCommit(c);
+        }
+    }
 
-        for (File dirFile : files) {
-            assert dirFile.isDirectory();
-
-            List<String> filenames = Utils.plainFilenamesIn(dirFile);
-            if (filenames == null) return;
-
-            for (String filename : filenames) {
-                Commit c = readCommit(join(dirFile, filename));
-                logPrintCommit(c, c.getParents().size() > 1);
+    public static void find(String commitMsg) {
+        List<Commit> allCommit = getAllCommit();
+        if (allCommit.isEmpty()) {
+            System.out.println("Found no commit with that message.");
+            return;
+        }
+        for (Commit c : allCommit) {
+            if (c.getMessage().equals(commitMsg)) {
+                System.out.println(c.getId());
             }
         }
     }
 
     // Helper Function =============================
+    private static List<Commit> getAllCommit() {
+        List<Commit> res = new ArrayList<>();
+        File[] files = OBJECT_COMMIT_DIR.listFiles();
+        if (files == null) return res;
+
+        for (File file : files) {
+            if (!file.isDirectory()) {
+                continue;
+            }
+
+            List<String> filenames = Utils.plainFilenamesIn(file);
+            if (filenames == null) {
+                continue;
+            }
+
+            for (String filename : filenames) {
+                res.add(readCommit(join(file, filename)));
+            }
+        }
+        return res;
+    }
 
     public static Commit readCommit(String id) {
         return Utils.readObject(
@@ -247,4 +274,6 @@ public class Repository {
                         id.substring(2))
                 .isFile();
     }
+
+
 }
