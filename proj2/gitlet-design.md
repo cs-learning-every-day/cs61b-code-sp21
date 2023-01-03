@@ -55,6 +55,7 @@ python tester.py --verbose samples/test01-init.in
 先编译javac *.java
 
 python3 tester.py samples/test01-init.in
+python3 tester.py samples/*.in
 
 详细信息
 

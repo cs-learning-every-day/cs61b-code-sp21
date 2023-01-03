@@ -36,6 +36,10 @@ public class Stage implements Serializable {
         cache.put(blob.filepath(), blob.id());
     }
 
+    public void addBlob(String filepath, String id) {
+        cache.put(filepath, id);
+    }
+
     /**
      * 清空 索引区
      */
@@ -51,7 +55,7 @@ public class Stage implements Serializable {
         return cache;
     }
 
-    public void removeBlob(Blob b) {
-        cache.remove(b.filepath());
+    public void removeBlob(String path) {
+        cache.remove(path);
     }
 }

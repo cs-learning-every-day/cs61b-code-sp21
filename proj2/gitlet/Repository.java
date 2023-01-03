@@ -74,7 +74,6 @@ public class Repository {
     }
 
     public static void add(String filepath) {
-        checkRepositoryExist();
         String fileRelativePath = getFileRelativePath(filepath);
         if (!fileExistWorkspace(fileRelativePath)) {
             System.err.println("File does not exist.");
@@ -82,20 +81,25 @@ public class Repository {
         }
         // create new blob object
         var blob = new Blob(fileRelativePath);
-
-        if (existBlobById(blob.id())) {
-            return;
+        if (!existBlobById(blob.id())) {
+            blob.save();
         }
-        blob.save();
-        initialized();
 
-        stageAdded.addBlob(blob);
-        saveAddedStage();
+        initialized();
+        if (stageRemoval.containsBlob(blob)) {
+            stageRemoval.removeBlob(blob.filepath());
+            saveRemovalStage();
+        }
+
+        if (!currCommit.containsBlob(blob)) {
+            stageAdded.addBlob(blob);
+            saveAddedStage();
+        }
     }
 
     public static void commit(String msg) {
         initialized();
-        if (stageAdded.isEmpty()) {
+        if (stageAdded.isEmpty() && stageRemoval.isEmpty()) {
             System.err.println("No changes added to the commit.");
             System.exit(0);
         }
@@ -103,22 +107,36 @@ public class Repository {
         var newCommit = new Commit(msg, new Date());
         newCommit.addParent(currCommit);
         newCommit.putAllBlob(stageAdded.getCache());
+        newCommit.deleteAllBlob(stageRemoval.getCache());
         newCommit.save();
 
         updateCurrentCommit(newCommit);
 
         stageAdded.clear();
         saveAddedStage();
+
+        stageRemoval.clear();
+        saveRemovalStage();
     }
 
     public static void rm(String filepath) {
         initialized();
         String fileRelativePath = getFileRelativePath(filepath);
+        if (!fileExistWorkspace(fileRelativePath) &&
+                currCommit.containsBlob(fileRelativePath)) {
+            String blobId = currCommit.getCache().get(fileRelativePath);
+            currCommit.removeBlob(fileRelativePath);
+            updateCurrentCommit(currCommit);
+            stageRemoval.addBlob(fileRelativePath, blobId);
+            saveRemovalStage();
+            return;
+        }
+
         var blob = new Blob(fileRelativePath);
 
         if (stageAdded.containsBlob(blob)) {
             blob.remove();
-            stageAdded.removeBlob(blob);
+            stageAdded.removeBlob(blob.filepath());
             saveAddedStage();
         } else if (currCommit.containsBlob(blob)) {
             workspaceFileDelete(fileRelativePath);
@@ -172,15 +190,13 @@ public class Repository {
 
     public static void find(String commitMsg) {
         List<Commit> allCommit = getAllCommit();
-        if (allCommit.isEmpty()) {
-            System.out.println("Found no commit with that message.");
-            return;
-        }
+
         for (Commit c : allCommit) {
             if (c.getMessage().equals(commitMsg)) {
                 System.out.println(c.getId());
             }
         }
+        System.out.println("Found no commit with that message.");
     }
 
     public static void status() {

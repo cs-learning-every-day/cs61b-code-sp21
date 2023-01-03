@@ -105,8 +105,18 @@ public class Commit implements Serializable {
         cache.remove(blob.filepath());
     }
 
+    public void removeBlob(String filepath) {
+        cache.remove(filepath);
+    }
+
     public void putAllBlob(Map<String, String> addedCache) {
         // also update current exist file id
         cache.putAll(addedCache);
+    }
+
+    public void deleteAllBlob(Map<String, String> removalCache) {
+        for (String k : removalCache.keySet()) {
+            cache.remove(k);
+        }
     }
 }
