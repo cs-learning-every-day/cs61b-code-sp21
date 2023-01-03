@@ -14,7 +14,7 @@ public class Stage implements Serializable {
     /**
      * Cache blob path - blob id
      */
-    private Map<String, String> cache = new HashMap<>();
+    private final Map<String, String> cache = new HashMap<>();
 
     public Stage() {
 
@@ -26,6 +26,10 @@ public class Stage implements Serializable {
 
     public boolean containsBlob(Blob blob) {
         return cache.containsKey(blob.filepath());
+    }
+
+    public boolean containsBlob(String filepath) {
+        return cache.containsKey(filepath);
     }
 
     public void addBlob(Blob blob) {

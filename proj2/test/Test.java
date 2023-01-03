@@ -1,9 +1,14 @@
 package test;
 
+import gitlet.Repository;
+
+import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.PriorityQueue;
 
 public class Test {
     public static void testMap() {
@@ -21,7 +26,29 @@ public class Test {
         System.out.println(dateFormat.format(new Date()));
     }
 
-    public static void main(String[] args) {
-        testDate();
+    public static void testRelativePath() throws IOException {
+        var newFile = new File("./gitlet");
+        System.out.println(newFile.isDirectory());
+        System.out.println(newFile.getName());
+        System.out.println(newFile.getPath());
+        System.out.println(newFile.getAbsolutePath());
+        System.out.println(newFile.getCanonicalPath());
+        System.out.println(Repository.CWD.getCanonicalPath());
+        System.out.println(newFile.getCanonicalPath().
+                replace(Repository.CWD.getCanonicalPath(), ""));
+    }
+
+    public static void testPriorityQueue() {
+        var q = new PriorityQueue<String>();
+        q.add("a.txt");
+        q.add("wug.txt");
+        q.add("wug2.txt");
+        for (String a : q) {
+            System.out.println(a);
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        testPriorityQueue();
     }
 }

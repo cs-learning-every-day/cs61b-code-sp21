@@ -2,10 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 
 import static gitlet.Utils.join;
 
@@ -78,12 +75,13 @@ public class Repository {
 
     public static void add(String filepath) {
         checkRepositoryExist();
-        if (!fileExistWorkspace(filepath)) {
+        String fileRelativePath = getFileRelativePath(filepath);
+        if (!fileExistWorkspace(fileRelativePath)) {
             System.err.println("File does not exist.");
             System.exit(0);
         }
         // create new blob object
-        var blob = new Blob(filepath);
+        var blob = new Blob(fileRelativePath);
 
         if (existBlobById(blob.id())) {
             return;
@@ -115,17 +113,19 @@ public class Repository {
 
     public static void rm(String filepath) {
         initialized();
-        var blob = new Blob(filepath);
+        String fileRelativePath = getFileRelativePath(filepath);
+        var blob = new Blob(fileRelativePath);
 
         if (stageAdded.containsBlob(blob)) {
             blob.remove();
             stageAdded.removeBlob(blob);
             saveAddedStage();
         } else if (currCommit.containsBlob(blob)) {
-            workspaceFileDelete(filepath);
+            workspaceFileDelete(fileRelativePath);
             currCommit.removeBlob(blob);
             updateCurrentCommit(currCommit);
             stageRemoval.addBlob(blob);
+            saveRemovalStage();
         } else {
             System.err.println("No reason to remove the file.");
             System.exit(0);
@@ -183,7 +183,160 @@ public class Repository {
         }
     }
 
+    public static void status() {
+        initialized();
+        System.out.println("=== Branches ===");
+        statusPrintBranch();
+
+        System.out.println();
+        System.out.println("=== Staged Files ===");
+        statusPrintStage(stageAdded);
+
+        System.out.println();
+        System.out.println("=== Removed Files ===");
+        statusPrintStage(stageRemoval);
+
+        System.out.println();
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        statusPrintModify();
+
+
+        System.out.println();
+        System.out.println("=== Untracked Files ===");
+        var q = new PriorityQueue<String>();
+        statusPrintUntracked(q, CWD);
+        q.forEach(System.out::println);
+    }
+
+
     // Helper Function =============================
+
+    private static void statusPrintModify() {
+        var q = new PriorityQueue<String>();
+        // case 1: Tracked in the current commit, changed in the working directory, but not staged
+        currCommit.getCache().forEach((filepath, blobId) -> {
+            if (stageRemoval.containsBlob(filepath) ||
+                    stageAdded.containsBlob(filepath)) {
+                return;
+            }
+            if (!fileExistWorkspace(filepath)) {
+                return;
+            }
+            Blob blob = new Blob(filepath);
+            if (!blob.id().equals(blobId)) {
+                File file = new File(filepath);
+                q.add(file.getName() + " (modified)");
+            }
+        });
+        // case 2: Staged for addition, but with different contents than in the working directory
+        stageAdded.getCache().forEach((filepath, blobId) -> {
+            if (!fileExistWorkspace(filepath)) {
+                return;
+            }
+            Blob blob = new Blob(filepath);
+            if (!blob.id().equals(blobId)) {
+                File file = new File(filepath);
+                q.add(file.getName() + " (modified)");
+            }
+        });
+        // case 3: Staged for addition, but deleted in the working directory
+        stageAdded.getCache().forEach((filepath, blobId) -> {
+            if (fileExistWorkspace(filepath)) {
+                return;
+            }
+            File file = new File(filepath);
+            q.add(file.getName() + " (deleted)");
+        });
+        // case 4: Not staged for removal, but tracked in the current commit and deleted from the working directory
+        currCommit.getCache().forEach((filepath, blobId) -> {
+            if (stageRemoval.containsBlob(filepath) ||
+                    fileExistWorkspace(filepath)) {
+                return;
+            }
+            File file = new File(filepath);
+            q.add(file.getName() + " (deleted)");
+        });
+        q.forEach(System.out::println);
+    }
+
+    private static void statusPrintUntracked(PriorityQueue<String> q, File curDir) {
+        File[] files = curDir.listFiles();
+        if (files == null) {
+            return;
+        }
+        for (File f : files) {
+            if (f.isDirectory()) {
+                if (f.getName().equals(".gitlet")) {
+                    continue;
+                }
+                // FIXME: gitlet ignore any subdirectories
+                statusPrintUntracked(q, f);
+            } else {
+                String fileRelativePath = getFileRelativePath(f.getPath());
+                if (!currCommit.containsBlob(fileRelativePath) &&
+                        !stageAdded.containsBlob(fileRelativePath)) {
+                    q.add(f.getName());
+                }
+            }
+        }
+    }
+
+    private static void statusPrintBranch() {
+        String cbn = getCurrBranchName();
+        PriorityQueue<String> q = getAllBranchName();
+        for (String name : q) {
+            if (name.equals(cbn)) {
+                System.out.println("*" + name);
+            } else {
+                System.out.println(name);
+            }
+        }
+    }
+
+    private static PriorityQueue<String> getAllBranchName() {
+        var res = new PriorityQueue<String>();
+        File[] files = REF_HEADS_DIR.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    res.add(file.getName());
+                }
+            }
+        }
+        return res;
+    }
+
+    private static void statusPrintStage(Stage stage) {
+        PriorityQueue<String> q = new PriorityQueue<>();
+        for (String fp : stage.getCache().keySet()) {
+            q.add(getFileName(fp));
+        }
+        q.forEach(System.out::println);
+    }
+
+    private static String getFileName(String path) {
+        String[] sp = path.split(File.pathSeparator);
+        return sp[sp.length - 1];
+    }
+
+    /**
+     * 返回文件f相对于当前工作目录的相对路径
+     */
+    private static String getFileRelativePath(String filepath) {
+        String res;
+        try {
+            File f = new File(filepath);
+            String fp = f.getCanonicalPath();
+            res = fp.replace(CWD.getCanonicalPath(), "");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        // 移除路径前缀
+        // /pom.xml -> pom.xml
+        return res.substring(1);
+    }
+
+
     private static List<Commit> getAllCommit() {
         List<Commit> res = new ArrayList<>();
         File[] files = OBJECT_COMMIT_DIR.listFiles();
@@ -274,6 +427,4 @@ public class Repository {
                         id.substring(2))
                 .isFile();
     }
-
-
 }

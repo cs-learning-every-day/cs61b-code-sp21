@@ -23,8 +23,8 @@ public class Commit implements Serializable {
     private String message;
     private String timestamp;
     private String id;
-    private List<Commit> parents = new ArrayList<>();
-    private Map<String, String> filepathIdMap = new HashMap<>();
+    private final List<Commit> parents = new ArrayList<>();
+    private final Map<String, String> cache = new HashMap<>();
 
 
     public Commit(String msg, Date date) {
@@ -35,7 +35,7 @@ public class Commit implements Serializable {
 
     public void addParent(Commit blob) {
         parents.add(blob);
-        filepathIdMap.putAll(blob.filepathIdMap);
+        cache.putAll(blob.cache);
     }
 
     public String getId() {
@@ -50,13 +50,20 @@ public class Commit implements Serializable {
         return message;
     }
 
+    public Map<String,String> getCache() {
+        return cache;
+    }
 
     public List<Commit> getParents() {
         return parents;
     }
 
     public boolean containsBlob(Blob blob) {
-        return filepathIdMap.containsKey(blob.filepath());
+        return cache.containsKey(blob.filepath());
+    }
+
+    public boolean containsBlob(String filepath) {
+        return cache.containsKey(filepath);
     }
 
     @Override
@@ -68,7 +75,7 @@ public class Commit implements Serializable {
     }
 
     private String generateID() {
-        return Utils.sha1(message, timestamp, parents.toString(), filepathIdMap.toString());
+        return Utils.sha1(message, timestamp, parents.toString(), cache.toString());
     }
 
     /**
@@ -95,11 +102,11 @@ public class Commit implements Serializable {
 
 
     public void removeBlob(Blob blob) {
-        filepathIdMap.remove(blob.filepath());
+        cache.remove(blob.filepath());
     }
 
     public void putAllBlob(Map<String, String> addedCache) {
         // also update current exist file id
-        filepathIdMap.putAll(addedCache);
+        cache.putAll(addedCache);
     }
 }
