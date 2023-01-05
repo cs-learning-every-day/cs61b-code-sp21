@@ -55,22 +55,22 @@ public class Main {
                 break;
             case "checkout":
                 switch (args.length) {
-                    case 3: // checkout -- filename
-                        Repository.checkoutByFilepath(args[2]);
-                        break;
-                    case 4: // checkout commitId -- filename
-                        Repository.checkout(args[1], args[3]);
-                        break;
-                    case 2: // checkout branchName
-                        Repository.checkoutByBranchName(args[1]);
-                        break;
-                    default:
-                        throw new IllegalArgumentException();
+                    case 3 -> // checkout -- filename
+                            Repository.checkoutByFilepath(args[2]);
+                    case 4 -> // checkout commitId -- filename
+                            Repository.checkout(args[1], args[3]);
+                    case 2 -> // checkout branchName
+                            Repository.checkoutByBranchName(args[1]);
+                    default -> throw new IllegalArgumentException();
                 }
                 break;
             case "branch":
                 checkValidOperands(args, 2);
                 Repository.branch(args[1]);
+                break;
+            case "rm-branch":
+                checkValidOperands(args, 2);
+                Repository.rmBranch(args[1]);
                 break;
             default:
                 System.err.println("No command with that name exists.");

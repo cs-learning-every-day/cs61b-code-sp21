@@ -317,6 +317,19 @@ public class Repository {
         nb.save();
     }
 
+    public static void rmBranch(String branchName) {
+        if (!existBranchName(branchName)) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(1);
+        }
+
+        if (getCurrBranchName().equals(branchName)) {
+            System.out.println("Cannot remove the current branch.");
+            System.exit(1);
+        }
+        Utils.join(REF_HEADS_DIR, branchName).deleteOnExit();
+    }
+
     // Helper Function =============================
 
     private static void updateCurrentBranch(String branchName) {
