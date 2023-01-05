@@ -16,4 +16,8 @@ public class Branch extends Commit {
         super(msg, date);
         this.name = name;
     }
+
+    public String getName() {
+        return name;
+    }
 }

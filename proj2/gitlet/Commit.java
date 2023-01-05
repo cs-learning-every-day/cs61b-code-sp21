@@ -50,8 +50,12 @@ public class Commit implements Serializable {
         return message;
     }
 
-    public Map<String,String> getCache() {
+    public Map<String, String> getCache() {
         return cache;
+    }
+
+    public String getBlobId(String filepath) {
+        return cache.get(filepath);
     }
 
     public List<Commit> getParents() {
@@ -118,5 +122,9 @@ public class Commit implements Serializable {
         for (String k : removalCache.keySet()) {
             cache.remove(k);
         }
+    }
+
+    public void putBlob(Blob blob) {
+        cache.put(blob.filepath(), blob.id());
     }
 }

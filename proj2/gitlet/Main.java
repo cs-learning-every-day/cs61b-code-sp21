@@ -53,6 +53,21 @@ public class Main {
             case "status":
                 Repository.status();
                 break;
+            case "checkout":
+                switch (args.length) {
+                    case 3: // checkout -- filename
+                        Repository.checkoutByFilepath(args[2]);
+                        break;
+                    case 4: // checkout commitId -- filename
+                        Repository.checkout(args[1], args[3]);
+                        break;
+                    case 2: // checkout branchName
+                        Repository.checkoutByBranchName(args[1]);
+                        break;
+                    default:
+                        throw new IllegalArgumentException();
+                }
+                break;
             default:
                 System.err.println("No command with that name exists.");
                 break;

@@ -191,12 +191,16 @@ public class Repository {
     public static void find(String commitMsg) {
         List<Commit> allCommit = getAllCommit();
 
+        boolean find = false;
         for (Commit c : allCommit) {
             if (c.getMessage().equals(commitMsg)) {
+                find = true;
                 System.out.println(c.getId());
             }
         }
-        System.out.println("Found no commit with that message.");
+        if (!find) {
+            System.out.println("Found no commit with that message.");
+        }
     }
 
     public static void status() {
@@ -220,12 +224,117 @@ public class Repository {
         System.out.println();
         System.out.println("=== Untracked Files ===");
         var q = new PriorityQueue<String>();
-        statusPrintUntracked(q, CWD);
+        List<String> fps = getAllUntrackedFilePath();
+        for (String fp : fps) {
+            q.add(new File(fp).getName());
+        }
         q.forEach(System.out::println);
+    }
+
+    public static void checkoutByFilepath(String filepath) {
+        // checkout -- filename
+        initialized();
+        String fileRelativePath = getFileRelativePath(filepath);
+
+        if (!currCommit.containsBlob(fileRelativePath)) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(1);
+        }
+
+        // copy blob to current workspace
+        copyBlobContentToWorkspace(currCommit.getBlobId(fileRelativePath), fileRelativePath);
+    }
+
+    public static void checkoutByBranchName(String branchName) {
+        // checkout branchName
+        initialized();
+        if (!existBranchName(branchName)) {
+            System.out.println("No such branch exists.");
+            System.exit(1);
+        }
+
+        if (getCurrBranchName().equals(branchName)) {
+            System.out.println("No need to checkout the current branch.");
+            System.exit(1);
+        }
+
+        Branch b = getBranch(branchName);
+        for (String fp : getAllUntrackedFilePath()) {
+            if (b.containsBlob(fp)) {
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.exit(1);
+            }
+        }
+        b.getCache().forEach((filepath, blobId) -> {
+            copyBlobContentToWorkspace(blobId, filepath);
+        });
+        updateCurrentBranch(b);
+    }
+
+    public static void checkout(String commitId, String filepath) {
+        // checkout commitId -- filename
+        initialized();
+        File f = null;
+        if (commitId.length() < 40) {
+            var tmpDir = Utils.join(OBJECT_COMMIT_DIR, commitId.substring(0, 2));
+            List<String> files = Utils.plainFilenamesIn(tmpDir);
+            assert (Objects.requireNonNull(files).size() > 0);
+            String s = commitId.substring(2);
+            for (String filename : files) {
+                if (filename.startsWith(s)) {
+                    f = Utils.join(tmpDir, filename);
+                    break;
+                }
+            }
+        } else {
+            f = Utils.join(OBJECT_COMMIT_DIR,
+                    commitId.substring(0, 2),
+                    commitId.substring(2));
+        }
+
+        assert f != null;
+        if (!f.exists()) {
+            System.out.println("No commit with that id exists.");
+            System.exit(1);
+        }
+        Commit commit = readCommit(f);
+        if (!commit.containsBlob(filepath)) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(1);
+        }
+        String fileRelativePath = getFileRelativePath(filepath);
+        copyBlobContentToWorkspace(commit.getBlobId(fileRelativePath), fileRelativePath);
     }
 
 
     // Helper Function =============================
+
+    private static void updateCurrentBranch(Branch b) {
+        Utils.writeContents(HEAD, b.getName());
+    }
+
+    private static Branch getBranch(String branchName) {
+        return Utils.readObject(Utils.join(REF_HEADS_DIR, branchName), Branch.class);
+    }
+
+    private static boolean existBranchName(String branchName) {
+        List<String> allBranchName = Utils.plainFilenamesIn(REF_HEADS_DIR);
+        assert allBranchName != null;
+        return allBranchName.contains(branchName);
+    }
+
+    private static void copyBlobContentToWorkspace(String blobId, String filepath) {
+        Blob oldBlob = Blob.readBlob(blobId);
+        File file = new File(filepath);
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        Utils.writeContents(file, oldBlob.getContent());
+    }
 
     private static void statusPrintModify() {
         var q = new PriorityQueue<String>();
@@ -275,7 +384,13 @@ public class Repository {
         q.forEach(System.out::println);
     }
 
-    private static void statusPrintUntracked(PriorityQueue<String> q, File curDir) {
+    private static List<String> getAllUntrackedFilePath() {
+        List<String> res = new ArrayList<String>();
+        untrackedHelp(res, CWD);
+        return res;
+    }
+
+    private static void untrackedHelp(List<String> res, File curDir) {
         File[] files = curDir.listFiles();
         if (files == null) {
             return;
@@ -286,12 +401,12 @@ public class Repository {
                     continue;
                 }
                 // FIXME: gitlet ignore any subdirectories
-                statusPrintUntracked(q, f);
+                untrackedHelp(res, f);
             } else {
                 String fileRelativePath = getFileRelativePath(f.getPath());
                 if (!currCommit.containsBlob(fileRelativePath) &&
                         !stageAdded.containsBlob(fileRelativePath)) {
-                    q.add(f.getName());
+                    res.add(fileRelativePath);
                 }
             }
         }
@@ -351,7 +466,6 @@ public class Repository {
         // /pom.xml -> pom.xml
         return res.substring(1);
     }
-
 
     private static List<Commit> getAllCommit() {
         List<Commit> res = new ArrayList<>();
@@ -436,11 +550,11 @@ public class Repository {
         readStage();
     }
 
-
     private static boolean existBlobById(String id) {
         return Utils.join(OBJECT_BLOB_DIR,
                         id.substring(0, 2),
                         id.substring(2))
                 .isFile();
     }
+
 }

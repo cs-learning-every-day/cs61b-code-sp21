@@ -46,6 +46,10 @@ public class Blob implements Serializable {
         }
     }
 
+    public byte[] getContent() {
+        return content;
+    }
+
     public static Blob readBlob(String id) {
         return Utils.readObject(
                 Utils.join(OBJECT_BLOB_DIR, id.substring(0, 2), id.substring(2)),
