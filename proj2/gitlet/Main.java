@@ -56,9 +56,20 @@ public class Main {
             case "checkout":
                 switch (args.length) {
                     case 3 -> // checkout -- filename
-                            Repository.checkoutByFilepath(args[2]);
+                    {
+                        if (!args[1].equals("--")) {
+                            invalidOperands();
+                        }
+                        Repository.checkoutByFilepath(args[2]);
+                    }
                     case 4 -> // checkout commitId -- filename
-                            Repository.checkout(args[1], args[3]);
+                    {
+                        if (!args[2].equals("--")) {
+                            invalidOperands();
+                        }
+
+                        Repository.checkout(args[1], args[3]);
+                    }
                     case 2 -> // checkout branchName
                             Repository.checkoutByBranchName(args[1]);
                     default -> throw new IllegalArgumentException();
@@ -80,8 +91,12 @@ public class Main {
 
     private static void checkValidOperands(String[] args, int expectedCount) {
         if (args.length != expectedCount) {
-            System.err.println("Incorrect operands.");
-            System.exit(0);
+            invalidOperands();
         }
     }
+
+    private static void invalidOperands() {
+        Utils.existPrint("Incorrect operands.");
+    }
+
 }

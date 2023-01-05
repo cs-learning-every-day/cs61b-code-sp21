@@ -31,6 +31,11 @@ class Utils {
     /** The length of a complete SHA-1 UID as a hexadecimal numeral. */
     static final int UID_LENGTH = 40;
 
+    static void existPrint(String msg) {
+        System.err.print(msg);
+        System.exit(0);
+    }
+
     /* SHA-1 HASH VALUES. */
 
     /** Returns the SHA-1 hash of the concatenation of VALS, which may

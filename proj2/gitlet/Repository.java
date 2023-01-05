@@ -47,8 +47,7 @@ public class Repository {
      */
     public static void init() {
         if (GITLET_DIR.exists()) {
-            System.err.println("A Gitlet version-control system already exists in the current directory.");
-            System.exit(0);
+            Utils.existPrint("A Gitlet version-control system already exists in the current directory.");
         }
         GITLET_DIR.mkdir();
 
@@ -77,32 +76,28 @@ public class Repository {
     public static void add(String filepath) {
         String fileRelativePath = getFileRelativePath(filepath);
         if (!fileExistWorkspace(fileRelativePath)) {
-            System.err.println("File does not exist.");
-            System.exit(0);
+            Utils.existPrint("File does not exist.");
         }
         // create new blob object
         var blob = new Blob(fileRelativePath);
+        initialized();
+
         if (!existBlobById(blob.id())) {
             blob.save();
+            stageAdded.addBlob(blob);
+            saveAddedStage();
         }
 
-        initialized();
         if (stageRemoval.containsBlob(blob)) {
             stageRemoval.removeBlob(blob.filepath());
             saveRemovalStage();
-        }
-
-        if (!currCommit.containsBlob(blob)) {
-            stageAdded.addBlob(blob);
-            saveAddedStage();
         }
     }
 
     public static void commit(String msg) {
         initialized();
         if (stageAdded.isEmpty() && stageRemoval.isEmpty()) {
-            System.err.println("No changes added to the commit.");
-            System.exit(0);
+            Utils.existPrint("No changes added to the commit.");
         }
 
         var newCommit = new Commit(msg, new Date());
@@ -146,8 +141,7 @@ public class Repository {
             stageRemoval.addBlob(blob);
             saveRemovalStage();
         } else {
-            System.err.println("No reason to remove the file.");
-            System.exit(0);
+            Utils.existPrint("No reason to remove the file.");
         }
     }
 
@@ -238,8 +232,7 @@ public class Repository {
         String fileRelativePath = getFileRelativePath(filepath);
 
         if (!currCommit.containsBlob(fileRelativePath)) {
-            System.out.println("File does not exist in that commit.");
-            System.exit(1);
+            Utils.existPrint("File does not exist in that commit.");
         }
 
         // copy blob to current workspace
@@ -250,21 +243,24 @@ public class Repository {
         // checkout branchName
         initialized();
         if (!existBranchName(branchName)) {
-            System.out.println("No such branch exists.");
-            System.exit(1);
+            Utils.existPrint("No such branch exists.");
         }
 
         if (getCurrBranchName().equals(branchName)) {
-            System.out.println("No need to checkout the current branch.");
-            System.exit(1);
+            Utils.existPrint("No need to checkout the current branch.");
         }
 
         String branchCommitId = getBranchCommitId(branchName);
         Commit bc = readCommit(branchCommitId);
+        // 清除当前commit包含, 对应分支没有的文件
+        currCommit.getCache().forEach((filepath, blobId) -> {
+           if (!bc.containsBlob(filepath))  {
+               workspaceFileDelete(filepath);
+           }
+        });
         for (String fp : getAllUntrackedFilePath()) {
             if (bc.containsBlob(fp)) {
-                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-                System.exit(1);
+                Utils.existPrint("There is an untracked file in the way; delete it, or add and commit it first.");
             }
         }
         bc.getCache().forEach((filepath, blobId) -> {
@@ -277,7 +273,8 @@ public class Repository {
         // checkout commitId -- filename
         initialized();
         File f = null;
-        if (commitId.length() < 40) {
+        // 判断commitId 长度找到对应的commit
+        if (commitId.length() != Utils.UID_LENGTH) {
             var tmpDir = Utils.join(OBJECT_COMMIT_DIR, commitId.substring(0, 2));
             List<String> files = Utils.plainFilenamesIn(tmpDir);
             assert (Objects.requireNonNull(files).size() > 0);
@@ -296,22 +293,19 @@ public class Repository {
 
         assert f != null;
         if (!f.exists()) {
-            System.out.println("No commit with that id exists.");
-            System.exit(1);
+            Utils.existPrint("No commit with that id exists.");
         }
         Commit commit = readCommit(f);
-        if (!commit.containsBlob(filepath)) {
-            System.out.println("File does not exist in that commit.");
-            System.exit(1);
-        }
         String fileRelativePath = getFileRelativePath(filepath);
+        if (!commit.containsBlob(fileRelativePath)) {
+            Utils.existPrint("File does not exist in that commit.");
+        }
         copyBlobContentToWorkspace(commit.getBlobId(fileRelativePath), fileRelativePath);
     }
 
     public static void branch(String branchName) {
         if (existBranchName(branchName)) {
-            System.out.println("A branch with that name already exists.");
-            System.exit(1);
+            Utils.existPrint("A branch with that name already exists.");
         }
         initialized();
         Branch nb = new Branch(branchName, currCommit);
@@ -320,13 +314,11 @@ public class Repository {
 
     public static void rmBranch(String branchName) {
         if (!existBranchName(branchName)) {
-            System.out.println("A branch with that name does not exist.");
-            System.exit(1);
+            Utils.existPrint("A branch with that name does not exist.");
         }
 
         if (getCurrBranchName().equals(branchName)) {
-            System.out.println("Cannot remove the current branch.");
-            System.exit(1);
+            Utils.existPrint("Cannot remove the current branch.");
         }
         Utils.join(REF_HEADS_DIR, branchName).deleteOnExit();
     }
@@ -560,8 +552,7 @@ public class Repository {
 
     private static void checkRepositoryExist() {
         if (!GITLET_DIR.exists()) {
-            System.err.println("fatal: not a git repository: .gitlet.");
-            System.exit(0);
+            Utils.existPrint("fatal: not a git repository: .gitlet.");
         }
     }
 
