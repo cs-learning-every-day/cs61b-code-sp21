@@ -38,8 +38,8 @@ public class Commit implements Serializable {
         this.message = c.message;
         this.timestamp = c.timestamp;
         this.id = c.id;
-        this.parents = c.parents;
-        this.cache = c.cache;
+        this.parents = new ArrayList<>(c.parents);
+        this.cache = new HashMap<>(c.cache);
     }
 
     public void addParent(Commit blob) {

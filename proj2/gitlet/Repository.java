@@ -86,9 +86,7 @@ public class Repository {
             blob.save();
             stageAdded.addBlob(blob);
             saveAddedStage();
-        }
-
-        if (stageRemoval.containsBlob(blob)) {
+        } else if (stageRemoval.containsBlob(blob)) {
             stageRemoval.removeBlob(blob.filepath());
             saveRemovalStage();
         }
@@ -252,49 +250,22 @@ public class Repository {
 
         String branchCommitId = getBranchCommitId(branchName);
         Commit bc = readCommit(branchCommitId);
+
         // 清除当前commit包含, 对应分支没有的文件
-        currCommit.getCache().forEach((filepath, blobId) -> {
-           if (!bc.containsBlob(filepath))  {
-               workspaceFileDelete(filepath);
-           }
-        });
-        for (String fp : getAllUntrackedFilePath()) {
-            if (bc.containsBlob(fp)) {
-                Utils.existPrint("There is an untracked file in the way; delete it, or add and commit it first.");
-            }
-        }
-        bc.getCache().forEach((filepath, blobId) -> {
-            copyBlobContentToWorkspace(blobId, filepath);
-        });
+        removeTrackedFileNotExistInCommit(currCommit, bc);
+        checkUntrackedFileNotExist(bc);
+        checkUntrackedFileNotExist(bc);
+
+        restoreFile(bc);
         updateCurrentBranch(branchName);
     }
 
     public static void checkout(String commitId, String filepath) {
         // checkout commitId -- filename
         initialized();
-        File f = null;
-        // 判断commitId 长度找到对应的commit
-        if (commitId.length() != Utils.UID_LENGTH) {
-            var tmpDir = Utils.join(OBJECT_COMMIT_DIR, commitId.substring(0, 2));
-            List<String> files = Utils.plainFilenamesIn(tmpDir);
-            assert (Objects.requireNonNull(files).size() > 0);
-            String s = commitId.substring(2);
-            for (String filename : files) {
-                if (filename.startsWith(s)) {
-                    f = Utils.join(tmpDir, filename);
-                    break;
-                }
-            }
-        } else {
-            f = Utils.join(OBJECT_COMMIT_DIR,
-                    commitId.substring(0, 2),
-                    commitId.substring(2));
-        }
+        File f = getCommitFile(commitId);
 
-        assert f != null;
-        if (!f.exists()) {
-            Utils.existPrint("No commit with that id exists.");
-        }
+        checkCommitExist(f);
         Commit commit = readCommit(f);
         String fileRelativePath = getFileRelativePath(filepath);
         if (!commit.containsBlob(fileRelativePath)) {
@@ -323,7 +294,97 @@ public class Repository {
         Utils.join(REF_HEADS_DIR, branchName).deleteOnExit();
     }
 
+    public static void reset(String commitId) {
+        File f = getCommitFile(commitId);
+        checkCommitExist(f);
+
+        initialized();
+
+        Commit cm = readCommit(f);
+        checkUntrackedFileNotExist(cm);
+
+        removeTrackedFileNotExistInCommit(currCommit, cm);
+        restoreFile(cm);
+        updateCurrentHeadCommit(cm);
+
+        stageAdded.clear();
+        saveAddedStage();
+
+        stageRemoval.clear();
+        saveRemovalStage();
+    }
+
+    private static void checkCommitExist(File f) {
+        if (!f.exists()) {
+            Utils.existPrint("No commit with that id exists.");
+        }
+    }
+
     // Helper Function =============================
+
+    /**
+     * 恢复commit中的文件
+     */
+    private static void restoreFile(Commit c) {
+        c.getCache().forEach((filepath, blobId) -> {
+            copyBlobContentToWorkspace(blobId, filepath);
+        });
+    }
+
+    /**
+     * 判断commitId 长度找到对应的commit文件
+     *
+     * @param commitId
+     * @return
+     */
+    private static File getCommitFile(String commitId) {
+        File f = null;
+        if (commitId.length() != Utils.UID_LENGTH) {
+            var tmpDir = Utils.join(OBJECT_COMMIT_DIR, commitId.substring(0, 2));
+            List<String> files = Utils.plainFilenamesIn(tmpDir);
+            assert (Objects.requireNonNull(files).size() > 0);
+            String s = commitId.substring(2);
+            for (String filename : files) {
+                if (filename.startsWith(s)) {
+                    f = Utils.join(tmpDir, filename);
+                    break;
+                }
+            }
+        } else {
+            f = newCommitFile(commitId);
+        }
+        assert f != null;
+        return f;
+    }
+
+    private static void updateCurrentHeadCommit(Commit c) {
+        new Branch(getCurrBranchName(), c).save();
+    }
+
+    /**
+     * If a working file is untracked in the current branch and
+     * would be overwritten by the reset,
+     * print `There is an untracked file in the way; delete it, or add and commit it first.`
+     */
+    private static void checkUntrackedFileNotExist(Commit c) {
+        for (String fp : getAllUntrackedFilePath()) {
+            if (c.containsBlob(fp)) {
+                Utils.existPrint("There is an untracked file in the way; delete it, or add and commit it first.");
+            }
+        }
+    }
+
+    /**
+     * 清除c1包含, c2没有的文件
+     * Removes tracked files  that are not present in that c2
+     */
+    private static void removeTrackedFileNotExistInCommit(Commit c1, Commit c2) {
+        c1.getCache().forEach((filepath, blobId) -> {
+            if (!c2.containsBlob(filepath)) {
+                workspaceFileDelete(filepath);
+            }
+        });
+    }
 
     private static void updateCurrentBranch(String branchName) {
         Utils.writeContents(HEAD, branchName);
@@ -507,8 +568,13 @@ public class Repository {
 
     public static Commit readCommit(String id) {
         return Utils.readObject(
-                Utils.join(OBJECT_COMMIT_DIR, id.substring(0, 2), id.substring(2)),
+                newCommitFile(id),
                 Commit.class);
+    }
+
+
+    public static File newCommitFile(String id) {
+        return Utils.join(OBJECT_COMMIT_DIR, id.substring(0, 2), id.substring(2));
     }
 
     public static Commit readCommit(File f) {
@@ -557,7 +623,10 @@ public class Repository {
     }
 
     private static void workspaceFileDelete(String filepath) {
-        Utils.join(CWD, filepath).delete();
+        var res = Utils.join(CWD, filepath).delete();
+        if (!res) {
+            throw new RuntimeException("delete file " + filepath + " failed");
+        }
     }
 
     private static void initialized() {

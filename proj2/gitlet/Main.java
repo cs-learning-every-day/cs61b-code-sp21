@@ -83,6 +83,10 @@ public class Main {
                 checkValidOperands(args, 2);
                 Repository.rmBranch(args[1]);
                 break;
+            case "reset":
+                checkValidOperands(args, 2);
+                Repository.reset(args[1]);
+                break;
             default:
                 System.err.println("No command with that name exists.");
                 break;
