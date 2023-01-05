@@ -67,7 +67,8 @@ public class Repository {
             e.printStackTrace();
         }
 
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        // gradescope not allowed
+//        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         var firstCommit = new Commit(DEFAULT_INIT_MSG, new Date(0));
         firstCommit.save();
         Utils.writeContents(master, firstCommit.getId());
