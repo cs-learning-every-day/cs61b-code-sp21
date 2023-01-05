@@ -68,6 +68,10 @@ public class Main {
                         throw new IllegalArgumentException();
                 }
                 break;
+            case "branch":
+                checkValidOperands(args, 2);
+                Repository.branch(args[1]);
+                break;
             default:
                 System.err.println("No command with that name exists.");
                 break;

@@ -258,17 +258,18 @@ public class Repository {
             System.exit(1);
         }
 
-        Branch b = getBranch(branchName);
+        String branchCommitId = getBranchCommitId(branchName);
+        Commit bc = readCommit(branchCommitId);
         for (String fp : getAllUntrackedFilePath()) {
-            if (b.containsBlob(fp)) {
+            if (bc.containsBlob(fp)) {
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                 System.exit(1);
             }
         }
-        b.getCache().forEach((filepath, blobId) -> {
+        bc.getCache().forEach((filepath, blobId) -> {
             copyBlobContentToWorkspace(blobId, filepath);
         });
-        updateCurrentBranch(b);
+        updateCurrentBranch(branchName);
     }
 
     public static void checkout(String commitId, String filepath) {
@@ -306,15 +307,24 @@ public class Repository {
         copyBlobContentToWorkspace(commit.getBlobId(fileRelativePath), fileRelativePath);
     }
 
+    public static void branch(String branchName) {
+        if (existBranchName(branchName)) {
+            System.out.println("A branch with that name already exists.");
+            System.exit(1);
+        }
+        initialized();
+        Branch nb = new Branch(branchName, currCommit);
+        nb.save();
+    }
 
     // Helper Function =============================
 
-    private static void updateCurrentBranch(Branch b) {
-        Utils.writeContents(HEAD, b.getName());
+    private static void updateCurrentBranch(String branchName) {
+        Utils.writeContents(HEAD, branchName);
     }
 
-    private static Branch getBranch(String branchName) {
-        return Utils.readObject(Utils.join(REF_HEADS_DIR, branchName), Branch.class);
+    private static String getBranchCommitId(String branchName) {
+        return Utils.readContentsAsString(join(REF_HEADS_DIR, branchName));
     }
 
     private static boolean existBranchName(String branchName) {

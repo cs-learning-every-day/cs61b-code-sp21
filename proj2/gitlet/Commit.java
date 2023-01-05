@@ -23,14 +23,23 @@ public class Commit implements Serializable {
     private String message;
     private String timestamp;
     private String id;
-    private final List<Commit> parents = new ArrayList<>();
-    private final Map<String, String> cache = new HashMap<>();
-
+    private List<Commit> parents;
+    private Map<String, String> cache;
 
     public Commit(String msg, Date date) {
+        this.parents = new ArrayList<>();
+        this.cache = new HashMap<>();
         this.message = msg;
         this.timestamp = dateConvert2Timestamp(date);
         this.id = generateID();
+    }
+
+    public Commit(Commit c) {
+        this.message = c.message;
+        this.timestamp = c.timestamp;
+        this.id = c.id;
+        this.parents = c.parents;
+        this.cache = c.cache;
     }
 
     public void addParent(Commit blob) {
