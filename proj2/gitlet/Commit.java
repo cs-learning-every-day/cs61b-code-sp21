@@ -1,7 +1,5 @@
 package gitlet;
 
-// TODO: any imports you need here
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -85,16 +83,20 @@ public class Commit implements Serializable {
 
     @Override
     public String toString() {
-        return "Commit{" +
-                "message='" + message + '\'' +
-                ", timestamp='" + timestamp + '\'' +
-                '}';
+        return "Commit{"
+                + "message='" + message + '\''
+                + ", timestamp='" + timestamp + '\''
+                + '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         Commit commit = (Commit) o;
         return Objects.equals(id, commit.id);
     }

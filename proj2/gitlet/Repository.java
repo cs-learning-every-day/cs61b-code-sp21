@@ -33,10 +33,10 @@ public class Repository {
     public static final File OBJECT_COMMIT_DIR = join(GITLET_DIR, "objects/commits");
     public static final File HEAD = join(GITLET_DIR, "HEAD");
 
-    public static Stage stageAdded = new Stage();
-    public static Stage stageRemoval = new Stage();
+    private static Stage stageAdded = new Stage();
+    private static Stage stageRemoval = new Stage();
 
-    public static Commit currCommit;
+    private static Commit currCommit;
 
     private Repository() {
     }
@@ -48,7 +48,8 @@ public class Repository {
      */
     public static void init() {
         if (GITLET_DIR.exists()) {
-            Utils.existPrint("A Gitlet version-control system already exists in the current directory.");
+            Utils.existPrint(
+                    "A Gitlet version-control system already exists in the current directory.");
         }
         GITLET_DIR.mkdir();
 
@@ -117,8 +118,8 @@ public class Repository {
     public static void rm(String filepath) {
         initialized();
         String fileRelativePath = getFileRelativePath(filepath);
-        if (!fileExistWorkspace(fileRelativePath) &&
-                currCommit.containsBlob(fileRelativePath)) {
+        if (!fileExistWorkspace(fileRelativePath)
+                && currCommit.containsBlob(fileRelativePath)) {
             String blobId = currCommit.getCache().get(fileRelativePath);
             currCommit.removeBlob(fileRelativePath);
             updateCurrentCommit(currCommit);
@@ -155,7 +156,6 @@ public class Repository {
             if (size == 0) {
                 break;
             } else {
-                // TODO: test merge case
                 // merge case : print first parent  commit ignore another
                 p = p.getParents().get(0);
             }
@@ -494,8 +494,8 @@ public class Repository {
 
         String content = "<<<<<<< HEAD" + System.lineSeparator()
                 + new String(curBlob.getContent(), StandardCharsets.UTF_8)
-                + "=======" + System.lineSeparator() +
-                new String(otherBlob.getContent(), StandardCharsets.UTF_8)
+                + "=======" + System.lineSeparator()
+                + new String(otherBlob.getContent(), StandardCharsets.UTF_8)
                 + ">>>>>>>";
 
         Utils.writeContents(file, content);
@@ -654,8 +654,8 @@ public class Repository {
         var q = new PriorityQueue<String>();
         // case 1: Tracked in the current commit, changed in the working directory, but not staged
         currCommit.getCache().forEach((filepath, blobId) -> {
-            if (stageRemoval.containsBlob(filepath) ||
-                    stageAdded.containsBlob(filepath)) {
+            if (stageRemoval.containsBlob(filepath)
+                    || stageAdded.containsBlob(filepath)) {
                 return;
             }
             if (!fileExistWorkspace(filepath)) {
@@ -688,8 +688,8 @@ public class Repository {
         });
         // case 4: Not staged for removal, but tracked in the current commit and deleted from the working directory
         currCommit.getCache().forEach((filepath, blobId) -> {
-            if (stageRemoval.containsBlob(filepath) ||
-                    fileExistWorkspace(filepath)) {
+            if (stageRemoval.containsBlob(filepath)
+                    || fileExistWorkspace(filepath)) {
                 return;
             }
             File file = new File(filepath);
@@ -718,8 +718,8 @@ public class Repository {
                 untrackedHelp(res, f);
             } else {
                 String fileRelativePath = getFileRelativePath(f.getPath());
-                if (!currCommit.containsBlob(fileRelativePath) &&
-                        !stageAdded.containsBlob(fileRelativePath)) {
+                if (!currCommit.containsBlob(fileRelativePath)
+                        && !stageAdded.containsBlob(fileRelativePath)) {
                     res.add(fileRelativePath);
                 }
             }
@@ -784,7 +784,9 @@ public class Repository {
     private static List<Commit> getAllCommit() {
         List<Commit> res = new ArrayList<>();
         File[] files = OBJECT_COMMIT_DIR.listFiles();
-        if (files == null) return res;
+        if (files == null) {
+            return res;
+        }
 
         for (File file : files) {
             if (!file.isDirectory()) {
