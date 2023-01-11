@@ -20,6 +20,10 @@ public class Blob implements Serializable {
         id = generateId();
     }
 
+    public void setContent(byte[] c) {
+        this.content = c;
+    }
+
     private String generateId() {
         return Utils.sha1(content, filepath);
     }

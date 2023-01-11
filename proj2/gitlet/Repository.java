@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static gitlet.Utils.join;
@@ -167,7 +168,7 @@ public class Repository {
         if (c.getParents().size() > 1) {
             String id1 = c.getParents().get(0).getId();
             String id2 = c.getParents().get(1).getId();
-            System.out.printf("Merge: %s %s", id1, id2);
+            System.out.printf("Merge: %s %s\n", id1.substring(0, 7), id2.substring(0, 7));
         }
         System.out.println("Date: " + c.getTimestamp());
         System.out.println(c.getMessage());
@@ -254,7 +255,6 @@ public class Repository {
         // 清除当前commit包含, 对应分支没有的文件
         removeTrackedFileNotExistInCommit(currCommit, bc);
         checkUntrackedFileNotExist(bc);
-        checkUntrackedFileNotExist(bc);
 
         restoreFile(bc);
         updateCurrentBranch(branchName);
@@ -314,13 +314,250 @@ public class Repository {
         saveRemovalStage();
     }
 
+    public static void merge(String branchName) {
+        initialized();
+
+        if (!stageRemoval.isEmpty()
+                || !stageAdded.isEmpty()) {
+            Utils.existPrint("You have uncommitted changes.");
+        }
+
+        if (!existBranchName(branchName)) {
+            Utils.existPrint("A branch with that name does not exist.");
+        }
+
+        if (getCurrBranchName().equals(branchName)) {
+            Utils.existPrint("Cannot merge a branch with itself.");
+        }
+
+
+        String cid = getBranchCommitId(branchName);
+        Commit otherCommit = readCommit(cid);
+
+        checkUntrackedFileNotExist(otherCommit);
+
+        Commit splitCommit = getSplitPoint(currCommit, otherCommit).orElseThrow();
+        if (splitCommit.equals(otherCommit)) {
+            Utils.existPrint("Given branch is an ancestor of the current branch.");
+        } else if (splitCommit.equals(currCommit)) {
+            checkoutByBranchName(branchName);
+            Utils.existPrint("Current branch fast-forwarded.");
+        }
+
+
+        Set<String> filepaths = new HashSet<>();
+        filepaths.addAll(currCommit.getCache().keySet());
+        filepaths.addAll(splitCommit.getCache().keySet());
+        filepaths.addAll(otherCommit.getCache().keySet());
+
+        Commit newCommit = new Commit("", new Date());
+
+        newCommit.addParent(currCommit);
+        newCommit.addParent(otherCommit);
+        Map<String, String> cache = newCommit.getCache();
+
+        boolean conflicted = false;
+
+        for (String filepath : filepaths) {
+            String oBlobId = otherCommit.getBlobId(filepath);
+            String cBlobId = currCommit.getBlobId(filepath);
+            String sBlobId = splitCommit.getBlobId(filepath);
+
+            boolean splitCommitHasFile = splitCommit.containsBlob(filepath);
+            boolean currCommitHasFile = currCommit.containsBlob(filepath);
+            boolean otherCommitHasFile = otherCommit.containsBlob(filepath);
+
+
+            if (splitCommitHasFile
+                    && currCommitHasFile
+                    && otherCommitHasFile) {
+                // case 1: modified on otherCommit but not HEAD -> otherCommit
+                if (!cBlobId.equals(oBlobId)
+                        && sBlobId.equals(cBlobId)) {
+                    cache.put(filepath, oBlobId);
+                    stageAdded.addBlob(filepath, oBlobId);
+                }
+                // case 2: modified in HEAD but not other -> HEAD
+                if (sBlobId.equals(oBlobId)
+                        && !cBlobId.equals(oBlobId)) {
+                    cache.put(filepath, cBlobId);
+                }
+            }
+            //                                      in same way -> DNM (doesn't matter) (same)
+            // case 3: modified in other and HEAD --
+            //                                      in diff way -> CONFLICT
+            if (!currCommitHasFile
+                    && !otherCommitHasFile) {
+                // in same way
+                cache.remove(filepath);
+                workspaceFileDelete(filepath);
+                continue;
+            }
+            if (currCommitHasFile
+                    && otherCommitHasFile
+                    && cBlobId.equals(oBlobId)) {
+                // in same way
+                cache.put(filepath, cBlobId);
+            }
+            // “Modified in different ways” can mean that the contents of
+            // both are changed and different from other,
+            // or the contents of one are changed and the other file is deleted,
+            // or the file was absent at the split point and has different contents
+            // in the given and current branches
+            if (currCommitHasFile) {
+                boolean isConflict = false;
+
+                if ((splitCommitHasFile
+                        && otherCommitHasFile
+                        && !oBlobId.equals(cBlobId)
+                        && !oBlobId.equals(sBlobId)
+                        && !cBlobId.equals(sBlobId))) {
+                    isConflict = true;
+                }
+
+                if (!otherCommitHasFile && splitCommitHasFile && !cBlobId.equals(sBlobId)) {
+                    isConflict = true;
+                }
+
+                if (!splitCommitHasFile && otherCommitHasFile && !oBlobId.equals(cBlobId)) {
+                    isConflict = true;
+                }
+
+                if (isConflict) {
+                    writeConflictFileContent(cache, currCommit, otherCommit, filepath);
+                    conflicted = true;
+                }
+            }
+            // case 4: not in split nor other but in HEAD -> HEAD
+            if (!splitCommitHasFile
+                    && !otherCommitHasFile
+                    && currCommitHasFile) {
+                cache.put(filepath, cBlobId);
+            }
+            // case 5: not in split nor HEAD but in other -> other
+            if (!splitCommitHasFile
+                    && !currCommitHasFile
+                    && otherCommitHasFile) {
+                cache.put(filepath, oBlobId);
+                stageAdded.addBlob(filepath, oBlobId);
+            }
+            // case 6: unmodified in HEAD but not present in other -> REMOVE
+            if (splitCommitHasFile
+                    && currCommitHasFile
+                    && !otherCommitHasFile
+                    && cBlobId.equals(sBlobId)) {
+                cache.remove(filepath);
+                stageRemoval.addBlob(filepath, sBlobId);
+                workspaceFileDelete(filepath);
+            }
+            // case 7: unmodified in other but not present in HEAD -> REMAIN REMOVE
+            if (splitCommitHasFile
+                    && !currCommitHasFile
+                    && otherCommitHasFile
+                    && oBlobId.equals(sBlobId)) {
+                cache.remove(filepath);
+                workspaceFileDelete(filepath);
+            }
+        }
+
+        if (conflicted) {
+            System.out.println("Encountered a merge conflict.");
+        }
+        newCommit.setMessage(String.format("Merged %s into %s.", branchName, getCurrBranchName()));
+        newCommit.save();
+        for (String filepath : stageRemoval.getCache().keySet()) {
+            workspaceFileDelete(filepath);
+        }
+        updateCurrentCommit(newCommit);
+        restoreFile(newCommit);
+        saveAddedStage();
+        saveRemovalStage();
+    }
+
+    // Helper Function =============================
+
+    /**
+     * Write conflict file
+     * <p>
+     * <<<<<<< HEAD
+     * contents of file in current branch
+     * =======
+     * contents of file in given branch
+     * >>>>>>>
+     */
+    private static void writeConflictFileContent(Map<String, String> cache, Commit currCommit, Commit otherCommit, String filepath) {
+        Blob curBlob = Blob.readBlob(currCommit.getBlobId(filepath));
+        Blob otherBlob = Blob.readBlob(otherCommit.getBlobId(filepath));
+
+        Utils.restrictedDelete(filepath);
+        File file = new File(filepath);
+
+        String content = "<<<<<<< HEAD" + System.lineSeparator()
+                + new String(curBlob.getContent(), StandardCharsets.UTF_8)
+                + "=======" + System.lineSeparator() +
+                new String(otherBlob.getContent(), StandardCharsets.UTF_8)
+                + ">>>>>>>";
+
+        Utils.writeContents(file, content);
+
+        Blob newBlob = new Blob(filepath);
+        newBlob.save();
+        cache.put(filepath, newBlob.id());
+    }
+
+    /**
+     * 获得c1, c2分开之前的最后一次相同Commit
+     *
+     * @return null if not exist
+     */
+    public static Optional<Commit> getSplitPoint(Commit c1, Commit c2) {
+        Map<Commit, Integer> m1 = getCommitDepth(c1);
+        Map<Commit, Integer> m2 = getCommitDepth(c2);
+
+        Commit res = null;
+        int minD = -1;
+        for (Commit k : m1.keySet()) {
+            if (m2.containsKey(k)) {
+                if (minD != -1 && m1.get(k) > minD) {
+                    continue;
+                }
+                res = k;
+                minD = m1.get(k);
+            }
+        }
+        if (minD == -1) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(res);
+    }
+
+    /**
+     * 记录当前commit出发 之前所有的parent commit
+     * 当前commit depth 为0
+     * Commit -> depth
+     */
+    private static Map<Commit, Integer> getCommitDepth(Commit commit) {
+        Map<Commit, Integer> res = new HashMap<>();
+        int d = 0;
+        Queue<Commit> q = new LinkedList<>();
+        q.add(commit);
+        while (!q.isEmpty()) {
+            int n = q.size();
+            for (int i = 0; i < n; i++) {
+                Commit c = q.poll();
+                res.put(c, d);
+                q.addAll(c.getParents());
+            }
+            d++;
+        }
+        return res;
+    }
+
     private static void checkCommitExist(File f) {
         if (!f.exists()) {
             Utils.existPrint("No commit with that id exists.");
         }
     }
-
-    // Helper Function =============================
 
     /**
      * 恢复commit中的文件
@@ -583,7 +820,7 @@ public class Repository {
 
     private static void updateCurrentCommit(Commit commit) {
         // update current branch
-        Utils.writeContents(Utils.join(REF_HEADS_DIR, getCurrBranchName()), commit.getId());
+        updateCurrentHeadCommit(commit);
         currCommit = commit;
     }
 
@@ -623,7 +860,11 @@ public class Repository {
     }
 
     private static void workspaceFileDelete(String filepath) {
-        var res = Utils.join(CWD, filepath).delete();
+        var f = Utils.join(CWD, filepath);
+        if (!f.exists()) {
+            return;
+        }
+        var res = f.delete();
         if (!res) {
             throw new RuntimeException("delete file " + filepath + " failed");
         }

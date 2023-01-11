@@ -51,6 +51,12 @@ python tester.py --verbose samples/test01-init.in
 #### add
 为文件创建blob, 添加到index区中,
 
+#### Merge
+- [video](https://www.youtube.com/watch?v=JR3OYCMv9b4&t=929s&ab_channel=SirOmarNabiKhanBEng)
+  ![image](https://cdn.staticaly.com/gh/XmchxUp/cloudimg@master/20230110/image.53m77t4vklc0.webp)
+![image](https://cdn.staticaly.com/gh/XmchxUp/cloudimg@master/20230110/image.2sl86ebabk80.webp)
+![image](https://cdn.staticaly.com/gh/XmchxUp/cloudimg@master/20230110/image.zcnw709uaps.webp)
+
 ## 调试指南
 先编译javac *.java
 

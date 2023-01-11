@@ -67,6 +67,10 @@ public class Commit implements Serializable {
         return cache.get(filepath);
     }
 
+    public void setMessage(String msg) {
+        this.message = msg;
+    }
+
     public List<Commit> getParents() {
         return parents;
     }
@@ -85,6 +89,19 @@ public class Commit implements Serializable {
                 "message='" + message + '\'' +
                 ", timestamp='" + timestamp + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Commit commit = (Commit) o;
+        return Objects.equals(id, commit.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 
     private String generateID() {

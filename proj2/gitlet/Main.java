@@ -87,6 +87,10 @@ public class Main {
                 checkValidOperands(args, 2);
                 Repository.reset(args[1]);
                 break;
+            case "merge":
+                checkValidOperands(args, 2);
+                Repository.merge(args[1]);
+                break;
             default:
                 System.err.println("No command with that name exists.");
                 break;
