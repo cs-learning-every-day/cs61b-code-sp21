@@ -316,20 +316,7 @@ public class Repository {
 
     public static void merge(String branchName) {
         initialized();
-
-        if (!stageRemoval.isEmpty()
-                || !stageAdded.isEmpty()) {
-            Utils.existPrint("You have uncommitted changes.");
-        }
-
-        if (!existBranchName(branchName)) {
-            Utils.existPrint("A branch with that name does not exist.");
-        }
-
-        if (getCurrBranchName().equals(branchName)) {
-            Utils.existPrint("Cannot merge a branch with itself.");
-        }
-
+        checkMergeBranchNameValid(branchName);
 
         String cid = getBranchCommitId(branchName);
         Commit otherCommit = readCommit(cid);
@@ -337,12 +324,7 @@ public class Repository {
         checkUntrackedFileNotExist(otherCommit);
 
         Commit splitCommit = getSplitPoint(currCommit, otherCommit).orElseThrow();
-        if (splitCommit.equals(otherCommit)) {
-            Utils.existPrint("Given branch is an ancestor of the current branch.");
-        } else if (splitCommit.equals(currCommit)) {
-            checkoutByBranchName(branchName);
-            Utils.existPrint("Current branch fast-forwarded.");
-        }
+        checkMergeSplitCommitValid(splitCommit, otherCommit, branchName);
 
 
         Set<String> filepaths = new HashSet<>();
@@ -483,6 +465,29 @@ public class Repository {
     }
 
     // Helper Function =============================
+    private static void checkMergeSplitCommitValid(Commit splitCommit, Commit otherCommit, String branchName) {
+        if (splitCommit.equals(otherCommit)) {
+            Utils.existPrint("Given branch is an ancestor of the current branch.");
+        } else if (splitCommit.equals(currCommit)) {
+            checkoutByBranchName(branchName);
+            Utils.existPrint("Current branch fast-forwarded.");
+        }
+    }
+
+    private static void checkMergeBranchNameValid(String branchName) {
+        if (!stageRemoval.isEmpty()
+                || !stageAdded.isEmpty()) {
+            Utils.existPrint("You have uncommitted changes.");
+        }
+
+        if (!existBranchName(branchName)) {
+            Utils.existPrint("A branch with that name does not exist.");
+        }
+
+        if (getCurrBranchName().equals(branchName)) {
+            Utils.existPrint("Cannot merge a branch with itself.");
+        }
+    }
 
     /**
      * Write conflict file
