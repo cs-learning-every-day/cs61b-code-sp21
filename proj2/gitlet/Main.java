@@ -13,14 +13,18 @@ public class Main {
      */
     public static void main(String[] args) {
         if (args.length == 0) {
-            System.err.println("Please enter a command.");
+            System.out.println("Please enter a command.");
             System.exit(0);
         }
         String firstArg = args[0];
+
+        if (firstArg.equals("init")) {
+            Repository.init();
+            return;
+        }
+        Repository.checkValidGitletDirectory();
         switch (firstArg) {
-            case "init":
-                Repository.init();
-                break;
+
             case "add":
                 if (args.length == 1) {
                     return;
@@ -31,7 +35,7 @@ public class Main {
                 if (args.length == 1 ||
                         args[1].length() == 0 ||
                         args[1].strip().length() == 0) {
-                    System.err.println("Please enter a commit message.");
+                    System.out.println("Please enter a commit message.");
                     return;
                 }
                 Repository.commit(args[1]);
@@ -92,7 +96,7 @@ public class Main {
                 Repository.merge(args[1]);
                 break;
             default:
-                System.err.println("No command with that name exists.");
+                System.out.println("No command with that name exists.");
                 break;
         }
     }

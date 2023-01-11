@@ -375,7 +375,7 @@ public class Repository {
                 if (!cBlobId.equals(oBlobId)
                         && sBlobId.equals(cBlobId)) {
                     cache.put(filepath, oBlobId);
-//                    stageAdded.addBlob(filepath, oBlobId);
+                    stageAdded.addBlob(filepath, oBlobId);
                     continue;
                 }
                 // case 2: modified in HEAD but not other -> HEAD
@@ -453,7 +453,7 @@ public class Repository {
                     && !otherCommitHasFile
                     && cBlobId.equals(sBlobId)) {
                 cache.remove(filepath);
-//                stageRemoval.addBlob(filepath, sBlobId);
+                stageRemoval.addBlob(filepath, sBlobId);
                 workspaceFileDelete(filepath);
                 continue;
             }
@@ -902,4 +902,9 @@ public class Repository {
                 .isFile();
     }
 
+    public static void checkValidGitletDirectory() {
+        if (!Utils.join(CWD, ".gitlet").exists()) {
+            Utils.existPrint("Not in an initialized Gitlet directory.");
+        }
+    }
 }
