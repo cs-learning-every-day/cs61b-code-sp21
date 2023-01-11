@@ -375,12 +375,14 @@ public class Repository {
                 if (!cBlobId.equals(oBlobId)
                         && sBlobId.equals(cBlobId)) {
                     cache.put(filepath, oBlobId);
-                    stageAdded.addBlob(filepath, oBlobId);
+//                    stageAdded.addBlob(filepath, oBlobId);
+                    continue;
                 }
                 // case 2: modified in HEAD but not other -> HEAD
                 if (sBlobId.equals(oBlobId)
                         && !cBlobId.equals(oBlobId)) {
                     cache.put(filepath, cBlobId);
+                    continue;
                 }
             }
             //                                      in same way -> DNM (doesn't matter) (same)
@@ -398,6 +400,7 @@ public class Repository {
                     && cBlobId.equals(oBlobId)) {
                 // in same way
                 cache.put(filepath, cBlobId);
+                continue;
             }
             // “Modified in different ways” can mean that the contents of
             // both are changed and different from other,
@@ -426,6 +429,7 @@ public class Repository {
                 if (isConflict) {
                     writeConflictFileContent(cache, currCommit, otherCommit, filepath);
                     conflicted = true;
+                    continue;
                 }
             }
             // case 4: not in split nor other but in HEAD -> HEAD
@@ -433,6 +437,7 @@ public class Repository {
                     && !otherCommitHasFile
                     && currCommitHasFile) {
                 cache.put(filepath, cBlobId);
+                continue;
             }
             // case 5: not in split nor HEAD but in other -> other
             if (!splitCommitHasFile
@@ -440,6 +445,7 @@ public class Repository {
                     && otherCommitHasFile) {
                 cache.put(filepath, oBlobId);
                 stageAdded.addBlob(filepath, oBlobId);
+                continue;
             }
             // case 6: unmodified in HEAD but not present in other -> REMOVE
             if (splitCommitHasFile
@@ -447,8 +453,9 @@ public class Repository {
                     && !otherCommitHasFile
                     && cBlobId.equals(sBlobId)) {
                 cache.remove(filepath);
-                stageRemoval.addBlob(filepath, sBlobId);
+//                stageRemoval.addBlob(filepath, sBlobId);
                 workspaceFileDelete(filepath);
+                continue;
             }
             // case 7: unmodified in other but not present in HEAD -> REMAIN REMOVE
             if (splitCommitHasFile
@@ -457,6 +464,7 @@ public class Repository {
                     && oBlobId.equals(sBlobId)) {
                 cache.remove(filepath);
                 workspaceFileDelete(filepath);
+                continue;
             }
         }
 
@@ -470,8 +478,8 @@ public class Repository {
         }
         updateCurrentCommit(newCommit);
         restoreFile(newCommit);
-        saveAddedStage();
-        saveRemovalStage();
+//        saveAddedStage();
+//        saveRemovalStage();
     }
 
     // Helper Function =============================
@@ -486,17 +494,27 @@ public class Repository {
      * >>>>>>>
      */
     private static void writeConflictFileContent(Map<String, String> cache, Commit currCommit, Commit otherCommit, String filepath) {
-        Blob curBlob = Blob.readBlob(currCommit.getBlobId(filepath));
-        Blob otherBlob = Blob.readBlob(otherCommit.getBlobId(filepath));
+        String curBlobId = currCommit.getBlobId(filepath);
+        String otherBlobId = otherCommit.getBlobId(filepath);
+        String curContent = "";
+        String otherContent = "";
+        if (curBlobId != null) {
+            curContent = new String(Blob.readBlob(curBlobId).getContent(), StandardCharsets.UTF_8);
+        }
+
+        if (otherBlobId != null) {
+            otherContent = new String(Blob.readBlob(otherBlobId).getContent(), StandardCharsets.UTF_8);
+        }
+
 
         Utils.restrictedDelete(filepath);
         File file = new File(filepath);
 
         String content = "<<<<<<< HEAD" + System.lineSeparator()
-                + new String(curBlob.getContent(), StandardCharsets.UTF_8)
+                + curContent
                 + "=======" + System.lineSeparator()
-                + new String(otherBlob.getContent(), StandardCharsets.UTF_8)
-                + ">>>>>>>";
+                + otherContent
+                + ">>>>>>>" + System.lineSeparator();
 
         Utils.writeContents(file, content);
 
