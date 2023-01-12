@@ -31,8 +31,8 @@ public class Repository {
     public static final File REF_HEADS_DIR = join(GITLET_DIR, "refs/heads");
     public static final File OBJECT_BLOB_DIR = join(GITLET_DIR, "objects/blobs");
     public static final File OBJECT_COMMIT_DIR = join(GITLET_DIR, "objects/commits");
+    public static final File REF_REMOTE_DIR = join(GITLET_DIR, "refs/remotes");
     public static final File HEAD = join(GITLET_DIR, "HEAD");
-
     private static Stage stageAdded = new Stage();
     private static Stage stageRemoval = new Stage();
 
@@ -53,7 +53,8 @@ public class Repository {
         }
         GITLET_DIR.mkdir();
 
-        join(GITLET_DIR, "refs", "heads").mkdirs();
+        REF_HEADS_DIR.mkdirs();
+        REF_REMOTE_DIR.mkdirs();
 
         var master = join(GITLET_DIR, "refs", "heads", DEFAULT_BRANCH_NAME);
         try {
@@ -464,7 +465,50 @@ public class Repository {
 //        saveRemovalStage();
     }
 
+    public static void addRemote(String remoteName, String remotePath) {
+        if (existRemoteName(remoteName)) {
+            Utils.existPrint("A remote with that name already exists.");
+        }
+        createRemote(remoteName, remotePath);
+    }
+
+    public static void rmRemote(String remoteName) {
+        if (!existRemoteName(remoteName)) {
+            Utils.existPrint("A remote with that name does not exist.");
+        }
+        join(REF_REMOTE_DIR, remoteName).delete();
+    }
+
+
     // Helper Function =============================
+    private static void createRemote(String remoteName, String remotePath) {
+        File file = join(REF_REMOTE_DIR, remoteName);
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Utils.writeContents(file, convertPath(remotePath));
+    }
+
+    // 将/转换成系统依赖
+    private static String convertPath(String path) {
+        return path.replaceAll("//", File.separator);
+    }
+
+    private static boolean existRemoteName(String remoteName) {
+        List<String> names = Utils.plainFilenamesIn(REF_REMOTE_DIR);
+        if (names == null) {
+            return false;
+        }
+        for (String name : names) {
+            if (remoteName.equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static void checkMergeSplitCommitValid(Commit splitCommit, Commit otherCommit, String branchName) {
         if (splitCommit.equals(otherCommit)) {
             Utils.existPrint("Given branch is an ancestor of the current branch.");

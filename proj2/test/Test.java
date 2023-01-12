@@ -108,7 +108,11 @@ public class Test {
         writeContents(file, System.lineSeparator() + "test2");
     }
 
+    public static void TestPathConvert() {
+        System.out.println("aa/123/.gitlet".replaceAll("//", File.separator));
+    }
+
     public static void main(String[] args) throws IOException {
-        TestWriteFile();
+        TestPathConvert();
     }
 }

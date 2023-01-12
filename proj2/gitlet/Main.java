@@ -95,6 +95,14 @@ public class Main {
                 checkValidOperands(args, 2);
                 Repository.merge(args[1]);
                 break;
+            case "add-remote":
+                checkValidOperands(args, 3);
+                Repository.addRemote(args[1], args[2]);
+                break;
+            case "rm-remote":
+                checkValidOperands(args, 2);
+                Repository.rmRemote(args[1]);
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 break;

@@ -10,6 +10,7 @@
 - [Make your monorepo feel small with Git’s sparse index](https://github.blog/2021-11-10-make-your-monorepo-feel-small-with-gits-sparse-index/#:~:text=The%20Git%20index%20is%20a,to%20be%20%E2%80%9Cstaged%20changes%E2%80%9D.)
 
 ## 存储布局 
+```go
 .gitlet
     / objects  -- 将文件sha-1 id 取前两位当文件夹, 后38位当文件名
         / commits -- 提交记录
@@ -20,11 +21,12 @@
         / heads -- 分支信息
             / master  存放当前commit id
         / remotes
+            / [remote name] 存放 [name of remote directory/.gitlet]
         / tags
     / stageAdded - staged for addition
     / stageRemoval - staged for removal
     / HEAD -- current branch name
-
+```
 
 ## 手动测试
 ```
