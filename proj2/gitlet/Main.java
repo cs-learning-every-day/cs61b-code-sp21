@@ -103,6 +103,18 @@ public class Main {
                 checkValidOperands(args, 2);
                 Repository.rmRemote(args[1]);
                 break;
+            case "push":
+                checkValidOperands(args, 3);
+                Repository.push(args[1], args[2]);
+                break;
+            case "fetch":
+                checkValidOperands(args, 3);
+                Repository.fetch(args[1], args[2]);
+                break;
+            case "pull":
+                checkValidOperands(args, 3);
+                Repository.pull(args[1], args[2]);
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 break;

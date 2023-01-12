@@ -1,5 +1,7 @@
 # Gitlet Design Document
+
 ## Res
+
 - [Write yourself a Git!](https://wyag.thb.lt/#org88aa70e)
 - [Git from the inside out](https://codewords.recurse.com/issues/two/git-from-the-inside-out)
 - [这才是真正的Git——Git内部原理揭秘！](https://zhuanlan.zhihu.com/p/96631135)
@@ -9,7 +11,8 @@
 - [Understanding Git — Index](https://konrad126.medium.com/understanding-git-index-4821a0765cf)
 - [Make your monorepo feel small with Git’s sparse index](https://github.blog/2021-11-10-make-your-monorepo-feel-small-with-gits-sparse-index/#:~:text=The%20Git%20index%20is%20a,to%20be%20%E2%80%9Cstaged%20changes%E2%80%9D.)
 
-## 存储布局 
+## 存储布局
+
 ```go
 .gitlet
     / objects  -- 将文件sha-1 id 取前两位当文件夹, 后38位当文件名
@@ -21,14 +24,18 @@
         / heads -- 分支信息
             / master  存放当前commit id
         / remotes
-            / [remote name] 存放 [name of remote directory/.gitlet]
+            / remote name 
+              / branch name 里面存放commit id
         / tags
+        
+    / config 存放 remote 配置信息 一个Map对象保存 [remote name] [remote path]
     / stageAdded - staged for addition
     / stageRemoval - staged for removal
     / HEAD -- current branch name
 ```
 
 ## 手动测试
+
 ```
 cd tesla-test
 javac ../gitlet/*.java && cp ../gitlet/*.class ./gitlet/ 
@@ -38,7 +45,9 @@ java gitlet.Main add file
 ```
 
 ## 代码测试
+
 运行前一定要先在gitlet源文件目录下运行javac *.java编译文件才可以。
+
 ```
 python tester.py samples/test01-init.in
 输出结果
@@ -48,18 +57,23 @@ python tester.py --verbose samples/test01-init.in
 ## 指令实现
 
 #### init
+
 创建默认master分支, HEAD内容为master, master内容为最后一次提交，这就是默认提交一次init commit, 写入空的index区
 
 #### add
+
 为文件创建blob, 添加到index区中,
 
 #### Merge
-- [video](https://www.youtube.com/watch?v=JR3OYCMv9b4&t=929s&ab_channel=SirOmarNabiKhanBEng)
-  ![image](https://cdn.staticaly.com/gh/XmchxUp/cloudimg@master/20230110/image.53m77t4vklc0.webp)
+
+> [video](https://www.youtube.com/watch?v=JR3OYCMv9b4&t=929s&ab_channel=SirOmarNabiKhanBEng)
+
+![image](https://cdn.staticaly.com/gh/XmchxUp/cloudimg@master/20230110/image.53m77t4vklc0.webp)
 ![image](https://cdn.staticaly.com/gh/XmchxUp/cloudimg@master/20230110/image.2sl86ebabk80.webp)
 ![image](https://cdn.staticaly.com/gh/XmchxUp/cloudimg@master/20230110/image.zcnw709uaps.webp)
 
 ## 调试指南
+
 先编译javac *.java
 
 python3 tester.py samples/test01-init.in

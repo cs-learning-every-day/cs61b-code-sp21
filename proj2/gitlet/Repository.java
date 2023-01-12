@@ -33,9 +33,10 @@ public class Repository {
     public static final File OBJECT_COMMIT_DIR = join(GITLET_DIR, "objects/commits");
     public static final File REF_REMOTE_DIR = join(GITLET_DIR, "refs/remotes");
     public static final File HEAD = join(GITLET_DIR, "HEAD");
+    public static final File CONFIG = join(GITLET_DIR, "config");
     private static Stage stageAdded = new Stage();
     private static Stage stageRemoval = new Stage();
-
+    private static Config config = new Config();
     private static Commit currCommit;
 
     private Repository() {
@@ -60,11 +61,13 @@ public class Repository {
         try {
             master.createNewFile();
             HEAD.createNewFile();
+            CONFIG.createNewFile();
             Utils.writeContents(HEAD, DEFAULT_BRANCH_NAME);
             STAGE_ADDITION_FILE.createNewFile();
             STAGE_REMOVAL_FILE.createNewFile();
             saveAddedStage();
             saveRemovalStage();
+            saveConfig();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -75,6 +78,7 @@ public class Repository {
         firstCommit.save();
         Utils.writeContents(master, firstCommit.getId());
     }
+
 
     public static void add(String filepath) {
         String fileRelativePath = getFileRelativePath(filepath);
@@ -466,47 +470,174 @@ public class Repository {
     }
 
     public static void addRemote(String remoteName, String remotePath) {
-        if (existRemoteName(remoteName)) {
+        readConfig();
+        if (config.existRemoteName(remoteName)) {
             Utils.existPrint("A remote with that name already exists.");
         }
-        createRemote(remoteName, remotePath);
+        config.addRemote(remoteName, remotePath);
+        Utils.join(REF_REMOTE_DIR, remoteName).mkdir();
+        saveConfig();
     }
 
     public static void rmRemote(String remoteName) {
-        if (!existRemoteName(remoteName)) {
+        readConfig();
+        if (!config.existRemoteName(remoteName)) {
             Utils.existPrint("A remote with that name does not exist.");
         }
-        join(REF_REMOTE_DIR, remoteName).delete();
+        config.removeRemote(remoteName);
+        Utils.join(REF_REMOTE_DIR, remoteName).delete();
+        saveConfig();
+    }
+
+    public static void push(String remoteName, String remoteBranchName) {
+        String remotePath = getRemotePath(remoteName);
+        checkRemoteRepositoryExist(remotePath);
+
+        String remoteBranchHeadId = getRemoteBranchHeadId(remotePath, remoteBranchName);
+
+        initialized();
+
+        Queue<Commit> q = new LinkedList<>();
+        Stack<Commit> st = new Stack<>();
+        q.add(currCommit);
+        boolean existInCurrentLocalHeadHistory = false;
+        while (!q.isEmpty()) {
+            Commit c = q.poll();
+            st.add(c);
+            if (c.getId().equals(remoteBranchHeadId)) {
+                existInCurrentLocalHeadHistory = true;
+                break;
+            }
+            q.addAll(c.getParents());
+        }
+
+        if (!existInCurrentLocalHeadHistory) {
+            Utils.existPrint("Please pull down remote changes before pushing.");
+        }
+        // copy blob && commit
+        while (!st.isEmpty()) {
+            copyToRemoteDir(remotePath, st.pop());
+        }
+        updateLocalRemoteFile(currCommit.getId(), remoteName, remoteBranchName);
+        // update remote branch head
+        updateRemoteBranchHead(currCommit.getId(), remotePath, remoteName, remoteBranchName);
     }
 
 
+    public static void fetch(String remoteName, String remoteBranchName) {
+    }
+
+    public static void pull(String remoteName, String remoteBranchName) {
+    }
+
     // Helper Function =============================
-    private static void createRemote(String remoteName, String remotePath) {
-        File file = join(REF_REMOTE_DIR, remoteName);
+    private static void updateRemoteBranchHead(String id, String remotePath, String remoteName, String remoteBranchName) {
+        File file = join(CWD,
+                remotePath,
+                "refs/remotes",
+                remoteName,
+                remoteBranchName);
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        Utils.writeContents(file, id);
+    }
+
+    private static void updateLocalRemoteFile(String id, String remoteName, String remoteBranchName) {
+        File file = join(REF_REMOTE_DIR, remoteName, remoteBranchName);
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        Utils.writeContents(file, id);
+    }
+
+    private static void saveConfig() {
+        Utils.writeObject(CONFIG, config);
+    }
+
+    private static void readConfig() {
+        config = Utils.readObject(CONFIG, Config.class);
+    }
+
+    private static Blob readBlob(String blobId) {
+        File file = join(OBJECT_COMMIT_DIR,
+                blobId.substring(0, 2),
+                blobId.substring(2));
+        return Utils.readObject(
+                file,
+                Blob.class);
+    }
+
+    private static void copyToRemoteDir(String remotePath, Commit c) {
+        // copy blob
+        c.getCache().forEach((filepath, blobId) -> {
+            var pathFile = Utils.join(
+                    CWD,
+                    remotePath,
+                    "objects/blobs",
+                    blobId.substring(0, 2));
+            pathFile.mkdirs();
+            var file = Utils.join(
+                    pathFile,
+                    blobId.substring(2));
+            if (file.exists()) {
+                throw new RuntimeException();
+            }
+            try {
+                file.createNewFile();
+                Utils.writeObject(file, readBlob(blobId));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        // copy commit
+        String commitId = c.getId();
+        var pathFile = Utils.join(CWD,
+                remotePath,
+                "objects/commits",
+                commitId.substring(0, 2));
+        pathFile.mkdirs();
+        var file = Utils.join(
+                pathFile,
+                commitId.substring(2));
+        if (file.exists()) {
+            throw new RuntimeException();
+        }
         try {
             file.createNewFile();
+            Utils.writeObject(file, readCommit(commitId));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        Utils.writeContents(file, convertPath(remotePath));
+    }
+
+    private static String getRemoteBranchHeadId(String remotePath, String remoteBranchName) {
+        //   ./     ../../test/.gitlet  HEAD
+        return Utils.readContentsAsString(join(CWD, remotePath, remoteBranchName));
+    }
+
+    private static String getRemotePath(String remoteName) {
+        return Utils.readContentsAsString(join(REF_REMOTE_DIR, remoteName));
+    }
+
+    private static void checkRemoteRepositoryExist(String remotePath) {
+        File dir = join(CWD, remotePath);
+        if (!dir.exists() || !dir.isDirectory()) {
+            Utils.existPrint("Remote directory not found.");
+        }
     }
 
     // 将/转换成系统依赖
     private static String convertPath(String path) {
         return path.replaceAll("//", File.separator);
-    }
-
-    private static boolean existRemoteName(String remoteName) {
-        List<String> names = Utils.plainFilenamesIn(REF_REMOTE_DIR);
-        if (names == null) {
-            return false;
-        }
-        for (String name : names) {
-            if (remoteName.equals(name)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static void checkMergeSplitCommitValid(Commit splitCommit, Commit otherCommit, String branchName) {
@@ -882,6 +1013,7 @@ public class Repository {
     public static File newCommitFile(String id) {
         return Utils.join(OBJECT_COMMIT_DIR, id.substring(0, 2), id.substring(2));
     }
+
 
     public static Commit readCommit(File f) {
         return Utils.readObject(f, Commit.class);
