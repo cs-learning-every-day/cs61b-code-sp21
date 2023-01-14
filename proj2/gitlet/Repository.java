@@ -246,7 +246,7 @@ public class Repository {
     public static void checkoutByBranchName(String branchName) {
         // checkout branchName
         initialized();
-        if (!existBranchName(branchName)) {
+        if (!existLocalBranchName(branchName)) {
             Utils.existPrint("No such branch exists.");
         }
 
@@ -280,7 +280,7 @@ public class Repository {
     }
 
     public static void branch(String branchName) {
-        if (existBranchName(branchName)) {
+        if (existLocalBranchName(branchName)) {
             Utils.existPrint("A branch with that name already exists.");
         }
         initialized();
@@ -289,7 +289,7 @@ public class Repository {
     }
 
     public static void rmBranch(String branchName) {
-        if (!existBranchName(branchName)) {
+        if (!existLocalBranchName(branchName)) {
             Utils.existPrint("A branch with that name does not exist.");
         }
 
@@ -319,11 +319,17 @@ public class Repository {
         saveRemovalStage();
     }
 
-    public static void merge(String branchName) {
+    public static void merge(String branchName, boolean isRemoteBranch) {
         initialized();
-        checkMergeBranchNameValid(branchName);
+        checkMergeBranchNameValid(branchName, isRemoteBranch);
 
-        String cid = getBranchCommitId(branchName);
+        String cid;
+        if (isRemoteBranch) {
+            cid = getRemoteBranchCommitId(branchName);
+        } else {
+            cid = getBranchCommitId(branchName);
+        }
+
         Commit otherCommit = readCommit(cid);
 
         checkUntrackedFileNotExist(otherCommit);
@@ -559,8 +565,9 @@ public class Repository {
         Utils.writeContents(file, remoteBranchHeadId);
     }
 
-
     public static void pull(String remoteName, String remoteBranchName) {
+        fetch(remoteName, remoteBranchName);
+        merge(remoteBranchName, true);
     }
 
     // Helper Function =============================
@@ -710,15 +717,22 @@ public class Repository {
         }
     }
 
-    private static void checkMergeBranchNameValid(String branchName) {
+    private static void checkMergeBranchNameValid(String branchName, boolean isRemoteBranch) {
         if (!stageRemoval.isEmpty()
                 || !stageAdded.isEmpty()) {
             Utils.existPrint("You have uncommitted changes.");
         }
 
-        if (!existBranchName(branchName)) {
-            Utils.existPrint("A branch with that name does not exist.");
+        if (isRemoteBranch) {
+            if (!existRemoteBranchName(branchName)) {
+                Utils.existPrint("A branch with that name does not exist.");
+            }
+        } else {
+            if (!existLocalBranchName(branchName)) {
+                Utils.existPrint("A branch with that name does not exist.");
+            }
         }
+
 
         if (getCurrBranchName().equals(branchName)) {
             Utils.existPrint("Cannot merge a branch with itself.");
@@ -890,10 +904,20 @@ public class Repository {
         return Utils.readContentsAsString(join(REF_HEADS_DIR, branchName));
     }
 
-    private static boolean existBranchName(String branchName) {
-        List<String> allBranchName = Utils.plainFilenamesIn(REF_HEADS_DIR);
-        assert allBranchName != null;
-        return allBranchName.contains(branchName);
+    private static String getRemoteBranchCommitId(String branchName) {
+        return Utils.readContentsAsString(join(REF_REMOTE_DIR, branchName));
+    }
+
+    private static boolean existLocalBranchName(String branchName) {
+        List<String> l1 = Utils.plainFilenamesIn(REF_HEADS_DIR);
+        assert l1 != null;
+        return l1.contains(branchName);
+    }
+
+    private static boolean existRemoteBranchName(String branchName) {
+        List<String> l1 = Utils.plainFilenamesIn(REF_REMOTE_DIR);
+        assert l1 != null;
+        return l1.contains(branchName);
     }
 
     private static void copyBlobContentToWorkspace(String blobId, String filepath) {

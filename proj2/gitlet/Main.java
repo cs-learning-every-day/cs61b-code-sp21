@@ -93,7 +93,7 @@ public class Main {
                 break;
             case "merge":
                 checkValidOperands(args, 2);
-                Repository.merge(args[1]);
+                Repository.merge(args[1], false);
                 break;
             case "add-remote":
                 checkValidOperands(args, 3);
