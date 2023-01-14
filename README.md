@@ -9,7 +9,7 @@
 - [x] Project 1: Data Structures
 - [ ] Lab 4: Git and Debugging
 - [ ] Lab 5: Project 1 Peer Code Review
-- [ ] Project 2: Gitlet
+- [x] Project 2: Gitlet
 - [x] Lab 6: Getting Started on Project 2
 - [ ] Lab 7: BSTMap
 - [ ] Lab 8: HashMap
