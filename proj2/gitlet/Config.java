@@ -25,4 +25,8 @@ public class Config implements Serializable {
     public void removeRemote(String remoteName) {
         remoteMap.remove(remoteName);
     }
+
+    public String getRemotePath(String remoteName) {
+        return remoteMap.get(remoteName);
+    }
 }
