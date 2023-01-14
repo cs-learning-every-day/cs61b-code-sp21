@@ -516,21 +516,74 @@ public class Repository {
         }
         // copy blob && commit
         while (!st.isEmpty()) {
-            copyToRemoteDir(remotePath, st.pop());
+            copyObjectsToRemoteDir(remotePath, st.pop());
         }
         updateLocalRemoteFile(currCommit.getId(), remoteName, remoteBranchName);
         // update remote branch head
         updateRemoteBranchHead(currCommit.getId(), remotePath, remoteName, remoteBranchName);
     }
 
-
     public static void fetch(String remoteName, String remoteBranchName) {
+        String remotePath = getRemotePath(remoteName);
+
+        checkRemoteRepositoryExist(remotePath);
+        checkRemoteBranchExist(remotePath, remoteBranchName);
+
+        File file = join(REF_REMOTE_DIR, remoteName, remoteBranchName);
+        String remoteBranchHeadId = getRemoteBranchHeadId(remotePath, remoteBranchName);
+
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        File remoteCommitFilePath = join(CWD, remotePath, "objects/commits");
+        Commit remoteCommit = readRemoteCommit(remoteCommitFilePath, remoteBranchHeadId);
+        // todo copy remoteCommit to local
+        Queue<Commit> q = new LinkedList<>();
+        Stack<Commit> st = new Stack<>();
+        q.add(remoteCommit);
+        while (!q.isEmpty()) {
+            Commit c = q.poll();
+            if (c.equals(currCommit)) {
+                break;
+            }
+            st.add(c);
+            q.addAll(c.getParents());
+        }
+        while (!st.isEmpty()) {
+            copyObjectsToLocalDir(st.pop());
+        }
+        // update local remote branch
+        Utils.writeContents(file, remoteBranchHeadId);
     }
+
 
     public static void pull(String remoteName, String remoteBranchName) {
     }
 
     // Helper Function =============================
+
+    private static Commit readRemoteCommit(File remoteCommitFilePath, String id) {
+        return Utils.readObject(Utils.join(
+                        remoteCommitFilePath,
+                        id.substring(0, 2),
+                        id.substring(2)),
+                Commit.class);
+    }
+
+    private static void checkRemoteBranchExist(String remotePath, String remoteBranchName) {
+        File file = join(
+                CWD,
+                remotePath,
+                "refs/heads",
+                remoteBranchName);
+        if (!file.exists()) {
+            Utils.existPrint("That remote does not have that branch.");
+        }
+    }
+
     private static void updateRemoteBranchHead(String id, String remotePath, String remoteName, String remoteBranchName) {
         File file = join(CWD,
                 remotePath,
@@ -576,20 +629,22 @@ public class Repository {
                 Blob.class);
     }
 
-    private static void copyToRemoteDir(String remotePath, Commit c) {
+    private static void copyObjectsToLocalDir(Commit c) {
+        copyObjectsHelp(OBJECT_BLOB_DIR, OBJECT_COMMIT_DIR, c);
+    }
+
+    private static void copyObjectsHelp(File blobDirPath, File commitDirPath, Commit c) {
         // copy blob
         c.getCache().forEach((filepath, blobId) -> {
             var pathFile = Utils.join(
-                    CWD,
-                    remotePath,
-                    "objects/blobs",
+                    blobDirPath,
                     blobId.substring(0, 2));
             pathFile.mkdirs();
             var file = Utils.join(
                     pathFile,
                     blobId.substring(2));
             if (file.exists()) {
-                throw new RuntimeException();
+                return;
             }
             try {
                 file.createNewFile();
@@ -600,9 +655,8 @@ public class Repository {
         });
         // copy commit
         String commitId = c.getId();
-        var pathFile = Utils.join(CWD,
-                remotePath,
-                "objects/commits",
+        var pathFile = Utils.join(
+                commitDirPath,
                 commitId.substring(0, 2));
         pathFile.mkdirs();
         var file = Utils.join(
@@ -617,6 +671,13 @@ public class Repository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void copyObjectsToRemoteDir(String remotePath, Commit c) {
+        copyObjectsHelp(
+                Utils.join(CWD, remotePath, "objects/blobs"),
+                Utils.join(CWD, remotePath, "objects/commits"),
+                c);
     }
 
     private static String getRemoteBranchHeadId(String remotePath, String remoteBranchName) {
