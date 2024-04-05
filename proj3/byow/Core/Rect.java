@@ -10,6 +10,11 @@ public class Rect {
         rightTop = new Point(x1 + w, y1 + h);
     }
 
+    public Rect(Rect c) {
+        this.leftBottom = new Point(c.leftBottom);
+        this.rightTop = new Point(c.rightTop);
+    }
+
 
     public boolean intersect(Rect other) {
         return this.leftBottom.x <= other.rightTop.x && this.rightTop.x >= other.leftBottom.x && this.leftBottom.y <= other.rightTop.y && this.rightTop.y >= other.leftBottom.y;

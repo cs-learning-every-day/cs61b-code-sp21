@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class MapBuilder implements IMapBuilder {
+public class SimpleMapBuilder implements IMapBuilder {
     public static final int WIDTH = 80;
     public static final int HEIGHT = 50;
 
@@ -23,7 +23,7 @@ public class MapBuilder implements IMapBuilder {
     public final List<Rect> rooms = new ArrayList<>();
     public final Random random;
 
-    public MapBuilder(Random random) {
+    public SimpleMapBuilder(Random random) {
         this.random = random;
         this.worldMap = new WorldMap(WIDTH, HEIGHT);
     }
@@ -63,12 +63,10 @@ public class MapBuilder implements IMapBuilder {
 
     @Override
     public void buildMap() {
-        for (int i = 0; i < worldMap.width; i++) {
-            for (int j = 0; j < worldMap.height; j++) {
-                worldMap.tiles[i][j] = Tileset.WALL;
-            }
-        }
+        MapBuilderUtils.resetWorld(worldMap);
         buildRooms();
+        Point center = rooms.get(0).center();
+        worldMap.tiles[center.x][center.y] = Tileset.WATER;
     }
 
     @Override

@@ -3,8 +3,19 @@ package byow.Core.map;
 import byow.Core.Rect;
 import byow.TileEngine.Tileset;
 
+
 public class MapBuilderUtils {
+    public static void resetWorld(WorldMap map) {
+        for (int i = 0; i < map.width; i++) {
+            for (int j = 0; j < map.height; j++) {
+                map.tiles[i][j] = Tileset.WALL;
+            }
+        }
+    }
+
+
     public static void applyRoomToWorld(WorldMap map, Rect room) {
+
         for (int y = room.leftBottom.y; y < room.rightTop.y; y++) {
             for (int x = room.leftBottom.x; x < room.rightTop.x; x++) {
                 map.tiles[x][y] = Tileset.FLOOR;

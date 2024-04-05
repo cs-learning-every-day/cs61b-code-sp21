@@ -1,8 +1,8 @@
 package byow.Core;
 
+import byow.Core.map.BSPMapBuilder;
 import byow.Core.map.IMapBuilder;
-import byow.Core.map.MapBuilder;
-import byow.Core.map.WorldMap;
+import byow.Core.map.SimpleMapBuilder;
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 
@@ -83,7 +83,7 @@ public class Engine {
                         seed = seed * 10 + Character.getNumericValue(keywords[idx]);
                     } else if (keywords[idx] == 's') {
                         state = GameState.Ticking;
-                        mapBuilder = new MapBuilder(new Random(seed));
+                        mapBuilder = new BSPMapBuilder(new Random(seed));
                         mapBuilder.buildMap();
                     }
                     break;
