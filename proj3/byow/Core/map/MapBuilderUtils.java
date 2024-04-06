@@ -16,8 +16,8 @@ public class MapBuilderUtils {
 
     public static void applyRoomToWorld(WorldMap map, Rect room) {
 
-        for (int y = room.leftBottom.y; y < room.rightTop.y; y++) {
-            for (int x = room.leftBottom.x; x < room.rightTop.x; x++) {
+        for (int y = room.leftBottom.y+1; y <= room.rightTop.y; y++) {
+            for (int x = room.leftBottom.x+1; x <= room.rightTop.x; x++) {
                 map.tiles[x][y] = Tileset.FLOOR;
             }
         }
