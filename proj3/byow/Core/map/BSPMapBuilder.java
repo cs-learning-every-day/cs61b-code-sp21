@@ -17,6 +17,7 @@ public class BSPMapBuilder implements IMapBuilder {
     private WorldMap worldMap;
 
     public final List<Rect> rooms = new ArrayList<>();
+    public final List<Rect> rects = new ArrayList<>();
     public final Random random;
 
     public BSPMapBuilder(Random random) {
@@ -30,17 +31,17 @@ public class BSPMapBuilder implements IMapBuilder {
         int halfWidth = Math.max(width / 2, 1);
         int halfHeight = Math.max(height / 2, 1);
 
-        this.rooms.add(new Rect(rect.leftBottom.x, rect.leftBottom.y, halfWidth, halfHeight));
-        this.rooms.add(new Rect(rect.leftBottom.x, rect.leftBottom.y + halfHeight, halfWidth, halfHeight));
-        this.rooms.add(new Rect(rect.leftBottom.x + halfWidth, rect.leftBottom.y, halfWidth, halfHeight));
-        this.rooms.add(new Rect(rect.leftBottom.x + halfWidth, rect.leftBottom.y + halfHeight, halfWidth, halfHeight));
+        this.rects.add(new Rect(rect.leftBottom.x, rect.leftBottom.y, halfWidth, halfHeight));
+        this.rects.add(new Rect(rect.leftBottom.x, rect.leftBottom.y + halfHeight, halfWidth, halfHeight));
+        this.rects.add(new Rect(rect.leftBottom.x + halfWidth, rect.leftBottom.y, halfWidth, halfHeight));
+        this.rects.add(new Rect(rect.leftBottom.x + halfWidth, rect.leftBottom.y + halfHeight, halfWidth, halfHeight));
     }
 
     private Rect getRandomRect() {
-        if (rooms.size() == 1) {
-            return rooms.get(0);
+        if (rects.size() == 1) {
+            return rects.get(0);
         }
-        return rooms.get(RandomUtils.uniform(random, rooms.size()));
+        return rects.get(RandomUtils.uniform(random, rects.size()));
     }
 
     private Rect getRandomSubRect(Rect rect) {
@@ -72,29 +73,33 @@ public class BSPMapBuilder implements IMapBuilder {
 
         for (int y = expanded.leftBottom.y; y <= expanded.rightTop.y; y++) {
             for (int x = expanded.leftBottom.x; x <= expanded.rightTop.x; x++) {
-                if (x > worldMap.width - 2 || y > worldMap.height - 2 || x < 1 || y < 1) {
+                if (x > worldMap.width - 2) {
                     canBuild = false;
-                    break;
+                }
+                if (y > worldMap.height - 2) {
+                    canBuild = false;
+                }
+                if (x < 1) {
+                    canBuild = false;
+                }
+                if (y < 1) {
+                    canBuild = false;
                 }
                 if (canBuild) {
                     if (worldMap.tiles[x][y] != Tileset.WALL) {
                         canBuild = false;
-                        break;
                     }
                 }
-            }
-            if (!canBuild) {
-                break;
             }
         }
         return canBuild;
     }
 
     private void buildRooms() {
-        rooms.clear();
+        rects.clear();
 
-        rooms.add(new Rect(2, 2, worldMap.width - 5, worldMap.height - 5));
-        addSubRects(rooms.get(0));
+        rects.add(new Rect(2, 2, worldMap.width - 5, worldMap.height - 5));
+        addSubRects(rects.get(0));
 
         int nRooms = 0;
         while (nRooms < 240) {
@@ -107,8 +112,8 @@ public class BSPMapBuilder implements IMapBuilder {
             }
             nRooms += 1;
         }
-        rooms.sort(Comparator.comparingInt(o -> o.leftBottom.x));
 
+        rooms.sort(Comparator.comparingInt(o -> o.leftBottom.x));
 
         for (int i = 0; i < rooms.size() - 1; i++) {
             Rect room = rooms.get(i);
@@ -144,8 +149,8 @@ public class BSPMapBuilder implements IMapBuilder {
         MapBuilderUtils.resetWorld(worldMap);
         buildRooms();
 
-        Point center = rooms.get(0).center();
-        worldMap.tiles[center.x][center.y] = Tileset.WATER;
+        Point start = rooms.get(0).center();
+        worldMap.tiles[start.x][start.y] = Tileset.TREE;
 
         Point stairs = rooms.get(rooms.size() - 1).center();
         worldMap.tiles[stairs.x][stairs.y] = Tileset.TREE;
