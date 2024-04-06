@@ -71,6 +71,12 @@ public class BSPMapBuilder implements IMapBuilder {
 
         boolean canBuild = true;
 
+        for (Rect room : rooms) {
+            if (room.intersect(rect)) {
+                canBuild = false;
+            }
+        }
+
         for (int y = expanded.leftBottom.y; y <= expanded.rightTop.y; y++) {
             for (int x = expanded.leftBottom.x; x <= expanded.rightTop.x; x++) {
                 if (x > worldMap.width - 2) {
