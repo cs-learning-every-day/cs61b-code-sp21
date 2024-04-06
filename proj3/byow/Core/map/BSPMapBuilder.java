@@ -112,7 +112,11 @@ public class BSPMapBuilder implements IMapBuilder {
             Rect rect = getRandomRect();
             Rect candidate = getRandomSubRect(rect);
             if (isPossible(candidate)) {
-                MapBuilderUtils.applyRoomToWorld(worldMap, candidate);
+                if (RandomUtils.uniform(random, 2) == 1) {
+                    MapBuilderUtils.applyRectangleRoomToWorld(worldMap, candidate);
+                } else {
+                    MapBuilderUtils.applyCircleRoomToWorld(worldMap, candidate);
+                }
                 rooms.add(candidate);
                 addSubRects(rect);
             }

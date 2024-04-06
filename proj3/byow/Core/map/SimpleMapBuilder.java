@@ -43,7 +43,7 @@ public class SimpleMapBuilder implements IMapBuilder {
                 }
             }
             if (ok) {
-                MapBuilderUtils.applyRoomToWorld(worldMap, newRoom);
+                MapBuilderUtils.applyRectangleRoomToWorld(worldMap, newRoom);
 
                 if (!rooms.isEmpty()) {
                     Point newCenter = newRoom.center();

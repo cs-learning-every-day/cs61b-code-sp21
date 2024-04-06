@@ -1,5 +1,6 @@
 package byow.Core.map;
 
+import byow.Core.Point;
 import byow.Core.Rect;
 import byow.TileEngine.Tileset;
 
@@ -14,11 +15,23 @@ public class MapBuilderUtils {
     }
 
 
-    public static void applyRoomToWorld(WorldMap map, Rect room) {
-
-        for (int y = room.leftBottom.y+1; y <= room.rightTop.y; y++) {
-            for (int x = room.leftBottom.x+1; x <= room.rightTop.x; x++) {
+    public static void applyRectangleRoomToWorld(WorldMap map, Rect room) {
+        for (int y = room.leftBottom.y + 1; y <= room.rightTop.y; y++) {
+            for (int x = room.leftBottom.x + 1; x <= room.rightTop.x; x++) {
                 map.tiles[x][y] = Tileset.FLOOR;
+            }
+        }
+    }
+
+    public static void applyCircleRoomToWorld(WorldMap map, Rect room) {
+        double radius = Math.min(room.rightTop.x - room.leftBottom.x, room.rightTop.y - room.leftBottom.y) / 2.0f;
+        Point center = room.center();
+        for (int y = room.leftBottom.y; y <= room.rightTop.y; y++) {
+            for (int x = room.leftBottom.x; x <= room.rightTop.x; x++) {
+                double distance = center.distanceTo(new Point(x, y));
+                if (distance <= radius) {
+                    map.tiles[x][y] = Tileset.FLOOR;
+                }
             }
         }
     }
